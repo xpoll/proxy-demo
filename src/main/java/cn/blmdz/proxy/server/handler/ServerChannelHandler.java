@@ -8,8 +8,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.model.Message;
+import cn.blmdz.proxy.model.ParamServer;
 import cn.blmdz.proxy.model.User;
-import cn.blmdz.proxy.model.UserProxy;
+import cn.blmdz.proxy.model.ProxyChannel;
 import cn.blmdz.proxy.service.ProxyManager;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -23,7 +24,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * @author xpoll
  * @date 2019年3月19日
  */
-public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
+public class ServerChannelHandler extends SimpleChannelInboundHandler<Message<ParamServer>> {
     
     private ProxyManager proxyManager;
     
@@ -35,7 +36,7 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 	 * 每当从服务端读到客户端写入信息时
 	 */
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
+	protected void channelRead0(ChannelHandlerContext ctx, Message<ParamServer> msg) throws Exception {
 		switch (msg.getType()) {
 		case AUTH:
 		    authMessageHandler(ctx, msg);
@@ -44,6 +45,7 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 		    connectMessageHandler(ctx, msg);
 			break;
 		case DISCONNECT:
+		    disconnectMessageHandler(ctx, msg);
 			break;
 		case HEARTBEAT:
 			heartbeatMessageHandler(ctx);
@@ -55,11 +57,11 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 		}
 	}
 	
-	private void authMessageHandler(ChannelHandlerContext ctx, Message msg) {
-	    String appId = msg.getParams();
+	private void authMessageHandler(ChannelHandlerContext ctx, Message<ParamServer> msg) {
+		ParamServer appId = msg.getParams();
 	    int port = 2222;// TODO
-	    UserProxy proxy = proxyManager.findUserByAuthCode(appId, port);
-	    if (proxy == null) {
+	    ProxyChannel proxy = proxyManager.findUserByAuthCode(appId, port);
+	    if (proxy == null || proxy.getServerChannel() == null) {
 	        ctx.channel().close();
 	        return ;
 	    }
@@ -70,7 +72,20 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 	}
 
     private void connectMessageHandler(ChannelHandlerContext ctx, Message msg) {
-        
+	    String appId = msg.getParams();
+	    int port = 2222;// TODO
+	    ProxyChannel proxy = proxyManager.findUserByAuthCode(appId, port);
+	    if (proxy == null || proxy.getServerChannel() == null) {
+	        ctx.channel().close();
+	        return ;
+	    }
+        if (proxy.getUserChannel() != null) {
+        	proxy.getUserChannel().config().setOption(ChannelOption.AUTO_READ, true);
+        }
+    }
+    
+    private void disconnectMessageHandler(ChannelHandlerContext ctx, Message msg) {
+    	
     }
 	
 	private void heartbeatMessageHandler(ChannelHandlerContext ctx) {

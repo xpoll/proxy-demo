@@ -1,6 +1,6 @@
 package cn.blmdz.proxy.service;
 
-import cn.blmdz.proxy.model.UserProxy;
+import cn.blmdz.proxy.model.ProxyChannel;
 import io.netty.channel.Channel;
 
 public interface ProxyManager {
@@ -8,7 +8,7 @@ public interface ProxyManager {
     /**
      * 根据授权码查找用户
      */
-    UserProxy findUserByAuthCode(String appId, Integer port);
+    ProxyChannel findUserByAuthCode(String appId, Integer port);
     
     /**
      * 增加通道

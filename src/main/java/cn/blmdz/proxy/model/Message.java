@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Message {
+public class Message<T> {
 
 	/**
 	 * 消息类型
@@ -21,7 +21,7 @@ public class Message {
 	/**
 	 * 请求参数
 	 */
-	private String params;
+	private T params;
 	
 	/**
 	 * 消息数据

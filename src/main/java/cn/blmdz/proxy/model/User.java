@@ -21,5 +21,5 @@ public class User {
     /**
      * 用户代理
      */
-    private List<UserProxy> proxys;
+    private List<ProxyChannel> proxys;
 }
