@@ -1,5 +1,7 @@
 package cn.blmdz.proxy.server;
 
+import java.util.concurrent.ExecutionException;
+
 import cn.blmdz.proxy.interfaces.ConfigChangedListener;
 import cn.blmdz.proxy.interfaces.Container;
 import io.netty.bootstrap.ServerBootstrap;
@@ -15,39 +17,62 @@ public class ProxyServerContainer implements Container, ConfigChangedListener {
 	private NioEventLoopGroup bossGroup;
 	// 负责处理已建立的客户端通道上的数据读写
 	private NioEventLoopGroup workGroup;
-	
-	public ProxyServerContainer() {
-		bossGroup = new NioEventLoopGroup();
-		workGroup = new NioEventLoopGroup();
-	}
 
 	@Override
 	public void start() {
-		ServerBootstrap bootstrap = new ServerBootstrap();
-		bootstrap.group(bossGroup, workGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
-			@Override
-			protected void initChannel(SocketChannel ch) throws Exception {
-				// 解码处理器
-				// 编码处理器
-				// 心跳检测处理器
-				// 业务处理器
-//				ch.pipeline().addLast(handlers);
-			}
-		});
-		
-		bootstrap.bind("127.0.0.1", 7788);
+        bossGroup = new NioEventLoopGroup();
+        workGroup = new NioEventLoopGroup();
+        
+        bootstrapServer();
+        bootstrapUser();
+	}
+
+    private void bootstrapServer() {
+        ServerBootstrap bootstrapServer = new ServerBootstrap();
+        bootstrapServer.group(bossGroup, workGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(SocketChannel ch) throws Exception {
+                // 解码处理器
+                // 编码处理器
+                // 心跳检测处理器
+                // 面向代理业务处理器
+//              ch.pipeline().addLast(handlers);
+            }
+        });
+        
+        try {
+            bootstrapServer.bind("127.0.0.1", 7788).get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+	
+	private void bootstrapUser() {
+        ServerBootstrap bootstrapUser = new ServerBootstrap();
+        bootstrapUser.group(bossGroup, workGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(SocketChannel ch) throws Exception {
+                // 计算流量以及调用次数
+                // 面向用户业务处理器
+//              ch.pipeline().addLast(handlers);
+            }
+        });
+        try {
+            bootstrapUser.bind(2222).get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
 	}
 
 	@Override
 	public void stop() {
-		// TODO Auto-generated method stub
-		
+        bossGroup.shutdownGracefully();
+        workGroup.shutdownGracefully();
 	}
 	
 	@Override
 	public void change() {
-		// TODO Auto-generated method stub
-		
+	    bootstrapUser();
 	}
 
 }

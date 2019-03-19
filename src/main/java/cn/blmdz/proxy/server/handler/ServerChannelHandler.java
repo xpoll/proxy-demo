@@ -1,11 +1,16 @@
 package cn.blmdz.proxy.server.handler;
 
-import org.fengfei.lanproxy.protocol.Constants;
-import org.fengfei.lanproxy.protocol.ProxyMessage;
-import org.fengfei.lanproxy.server.ProxyChannelManager;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.model.Message;
+import cn.blmdz.proxy.model.User;
+import cn.blmdz.proxy.model.UserProxy;
+import cn.blmdz.proxy.service.ProxyManager;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -13,7 +18,18 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+/**
+ * 面向代理(真实服务器上一层)
+ * @author xpoll
+ * @date 2019年3月19日
+ */
 public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
+    
+    private ProxyManager proxyManager;
+    
+    public ServerChannelHandler(ProxyManager proxyManager) {
+        this.proxyManager = proxyManager;
+    }
 
 	/**
 	 * 每当从服务端读到客户端写入信息时
@@ -22,8 +38,10 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 	protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
 		switch (msg.getType()) {
 		case AUTH:
+		    authMessageHandler(ctx, msg);
 			break;
 		case CONNECT:
+		    connectMessageHandler(ctx, msg);
 			break;
 		case DISCONNECT:
 			break;
@@ -38,14 +56,22 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 	}
 	
 	private void authMessageHandler(ChannelHandlerContext ctx, Message msg) {
-		// 根据key找到用户
-		// 找到用户的端口映射表
-		
-		// 端口没有直接关闭本channel
-		// channel已建立直接关闭本channel
-		
+	    String appId = msg.getParams();
+	    int port = 2222;// TODO
+	    UserProxy proxy = proxyManager.findUserByAuthCode(appId, port);
+	    if (proxy == null) {
+	        ctx.channel().close();
+	        return ;
+	    }
 		// 封装本channel为端口映射点
+	    if (!proxyManager.addChannel(appId, port, ctx.channel())) {
+	        ctx.channel().close();
+	    }
 	}
+
+    private void connectMessageHandler(ChannelHandlerContext ctx, Message msg) {
+        
+    }
 	
 	private void heartbeatMessageHandler(ChannelHandlerContext ctx) {
 		// 返回心跳包
@@ -54,7 +80,7 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 	
 
     /**
-     * channel可写性已更改
+     * Channel 可写性已更改
      */
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
@@ -67,7 +93,7 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
     }
 
     /**
-     * channel被关闭的时候触发（在断开连接的时候）
+     * Channel 被关闭的时候触发（在断开连接的时候）
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
@@ -91,5 +117,4 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Message> {
 
         super.channelInactive(ctx);
     }
-
 }

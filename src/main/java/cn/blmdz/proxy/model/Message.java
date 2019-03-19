@@ -28,7 +28,10 @@ public class Message {
 	 */
 	private byte[] data;
 	
-//	private long serialNumber;
+	/**
+	 * 端口
+	 */
+	private int port;
 	
 	public Message(MessageType type) {
 		this.type = type;
