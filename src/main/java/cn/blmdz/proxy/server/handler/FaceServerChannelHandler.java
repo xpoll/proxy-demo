@@ -1,21 +1,35 @@
 package cn.blmdz.proxy.server.handler;
 
+import java.net.InetSocketAddress;
+
+import cn.blmdz.proxy.model.ProxyChannel;
+import cn.blmdz.proxy.service.ProxyManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
- * 面向用户
+ * 面向服务器
  * @author xpoll
  * @date 2019年3月19日
  */
-public class UserChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
+    
+    private ProxyManager proxyManager;
+    
+    public FaceServerChannelHandler(ProxyManager proxyManager) {
+        this.proxyManager = proxyManager;
+    }
 
     /**
      * Channel 建立连接的时候触发
      */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+
+        Integer port = ((InetSocketAddress) ctx.channel().localAddress()).getPort();
+        
+        ProxyChannel proxyChannel = proxyManager.findUserByAuthCodeFaceServerPort(port);
         
     }
     

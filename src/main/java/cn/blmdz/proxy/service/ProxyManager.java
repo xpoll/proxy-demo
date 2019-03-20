@@ -1,6 +1,7 @@
 package cn.blmdz.proxy.service;
 
 import cn.blmdz.proxy.model.ProxyChannel;
+import cn.blmdz.proxy.model.ProxyRequestServerParam;
 import io.netty.channel.Channel;
 
 public interface ProxyManager {
@@ -8,10 +9,24 @@ public interface ProxyManager {
     /**
      * 根据授权码查找用户
      */
-    ProxyChannel findUserByAuthCode(String appId, Integer port);
+    ProxyChannel findUserByAuthCodeFaceProxyPort(ProxyRequestServerParam param);
+
+    /**
+     * 根据授权码查找用户
+     */
+    ProxyChannel findUserByAuthCodeFaceServerPort(Integer port);
     
     /**
      * 增加通道
      */
-    boolean addChannel(String appId, Integer port, Channel channel);
+    ProxyChannel addFaceProxyChannel(ProxyRequestServerParam param, Channel channel);
+    
+    void removeFaceProxyChannel(ProxyChannel proxy);
+    
+    /**
+     * 
+     */
+    ProxyChannel findUserByChannel(Channel channel);
+    
+    
 }

@@ -9,29 +9,29 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProxyChannel {
-
     /**
-     * 面向代理端通道
+     * appId
      */
-    private Channel serverChannel;
-    /**
-     * 面向用户端通道
-     */
-    private Channel userChannel;
+    private String appId;
     /**
      * 面向代理端端端口
      */
-    private Integer serverPort;
+    private Integer faceProxyPort;
+    /**
+     * 面向代理端通道
+     */
+    private Channel faceProxyChannel;
     /**
      * 面向用户端端口
      */
-    private Integer userPort;
+    private Integer faceServerPort;
+    /**
+     * 面向用户端通道
+     */
+    private Channel faceServerChannel;
 
-    public static ProxyChannel buildFaceUser(int userPort, Channel userChannel) {
-    	return new ProxyChannel(null, userChannel, null, userPort);
-    }
     
-    public static ProxyChannel buildFaceServer(int serverPort, Channel serverChannel) {
-    	return new ProxyChannel(serverChannel, null, serverPort, null);
+    public static ProxyChannel buildFaceProxy(String appId, int faceProxyPort, Channel faceProxyChannel, int faceServerPort) {
+    	return new ProxyChannel(appId, faceProxyPort, faceProxyChannel, faceServerPort, null);
     }
 }

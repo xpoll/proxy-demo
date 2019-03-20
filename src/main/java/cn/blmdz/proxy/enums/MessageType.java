@@ -9,7 +9,8 @@ public enum MessageType {
 	AUTH((byte) 0x02, "授权"),
 	CONNECT((byte) 0x03, "连接"),
 	DISCONNECT((byte) 0x04, "连接中断"),
-	TRANSFER((byte) 0x05, "传输数据"),
+    TRANSFER((byte) 0x05, "传输数据"),
+    PORT((byte) 0x06, "告诉代理端暴露的端口"),
 	;
 	private byte value;
 	

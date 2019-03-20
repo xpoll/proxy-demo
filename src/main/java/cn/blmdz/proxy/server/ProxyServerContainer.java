@@ -14,20 +14,15 @@ public class ProxyServerContainer implements Container, ConfigChangedListener {
 
 	
 	// 线程池处理客户端的连接请求，并将accept的连接注册到另一个work线程上
-	private NioEventLoopGroup bossGroup;
+	public static NioEventLoopGroup bossGroup;
 	// 负责处理已建立的客户端通道上的数据读写
-	private NioEventLoopGroup workGroup;
+	public static NioEventLoopGroup workGroup;
 
 	@Override
 	public void start() {
         bossGroup = new NioEventLoopGroup();
         workGroup = new NioEventLoopGroup();
         
-        bootstrapServer();
-        bootstrapUser();
-	}
-
-    private void bootstrapServer() {
         ServerBootstrap bootstrapServer = new ServerBootstrap();
         bootstrapServer.group(bossGroup, workGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
@@ -46,23 +41,6 @@ public class ProxyServerContainer implements Container, ConfigChangedListener {
             e.printStackTrace();
         }
     }
-	
-	private void bootstrapUser() {
-        ServerBootstrap bootstrapUser = new ServerBootstrap();
-        bootstrapUser.group(bossGroup, workGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            protected void initChannel(SocketChannel ch) throws Exception {
-                // 计算流量以及调用次数
-                // 面向用户业务处理器
-//              ch.pipeline().addLast(handlers);
-            }
-        });
-        try {
-            bootstrapUser.bind(2222).get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-	}
 
 	@Override
 	public void stop() {
@@ -72,7 +50,7 @@ public class ProxyServerContainer implements Container, ConfigChangedListener {
 	
 	@Override
 	public void change() {
-	    bootstrapUser();
+//	    bootstrapUser();
 	}
 
 }
