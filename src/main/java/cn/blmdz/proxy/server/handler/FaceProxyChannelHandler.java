@@ -3,7 +3,6 @@ package cn.blmdz.proxy.server.handler;
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.model.Message;
 import cn.blmdz.proxy.model.ProxyChannel;
-import cn.blmdz.proxy.model.ProxyRequestServerParam;
 import cn.blmdz.proxy.service.ProxyManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -15,7 +14,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * @author xpoll
  * @date 2019年3月19日
  */
-public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message<ProxyRequestServerParam>> {
+public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message> {
     
     private ProxyManager proxyManager;
     
@@ -27,7 +26,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 	 * 每当从服务端读到客户端写入信息时
 	 */
 	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, Message<ProxyRequestServerParam> msg) throws Exception {
+	protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
 		switch (msg.getType()) {
 		case AUTH:
 		    authMessageHandler(ctx, msg);
@@ -49,7 +48,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 		}
 	}
 	
-	private void authMessageHandler(ChannelHandlerContext ctx, Message<ProxyRequestServerParam> msg) {
+	private void authMessageHandler(ChannelHandlerContext ctx, Message msg) {
 	    ProxyChannel proxy = proxyManager.addFaceProxyChannel(msg.getParams(), ctx.channel());
 	    if (proxy == null) {
 	        ctx.channel().close();
@@ -57,8 +56,8 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 	    }
 	}
 
-    private void connectMessageHandler(ChannelHandlerContext ctx, Message<ProxyRequestServerParam> msg) {
-        ProxyChannel proxy = proxyManager.findUserByAuthCodeFaceProxyPort(msg.getParams());
+    private void connectMessageHandler(ChannelHandlerContext ctx, Message msg) {
+        ProxyChannel proxy = proxyManager.findByAuthCodeFaceProxyPort(msg.getParams());
         if (proxy == null || proxy.getFaceProxyChannel() == null) {
             ctx.channel().close();
             return ;
@@ -68,16 +67,16 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
         }
     }
     
-    private void disconnectMessageHandler(ChannelHandlerContext ctx, Message<ProxyRequestServerParam> msg) {
-        proxyManager.removeFaceProxyChannel(proxyManager.findUserByAuthCodeFaceProxyPort(msg.getParams()));
+    private void disconnectMessageHandler(ChannelHandlerContext ctx, Message msg) {
+        proxyManager.removeFaceProxyChannel(proxyManager.findByAuthCodeFaceProxyPort(msg.getParams()));
     }
 	
 	private void heartbeatMessageHandler(ChannelHandlerContext ctx) {
-		ctx.channel().writeAndFlush(new Message<Void>(MessageType.HEARTBEAT));
+		ctx.channel().writeAndFlush(new Message(MessageType.HEARTBEAT));
 	}
 
-    private void transferMessageHandler(ChannelHandlerContext ctx, Message<ProxyRequestServerParam> msg) {
-        ProxyChannel proxy = proxyManager.findUserByChannel(ctx.channel());
+    private void transferMessageHandler(ChannelHandlerContext ctx, Message msg) {
+        ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
         if (proxy.getFaceServerChannel() == null) return ;
         
         ByteBuf buf = ctx.alloc().buffer(msg.getData().length);
@@ -90,7 +89,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
      */
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-        ProxyChannel proxy = proxyManager.findUserByChannel(ctx.channel());
+        ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
         if (proxy != null && proxy.getFaceServerChannel() != null) {
             proxy.getFaceServerChannel().config().setOption(ChannelOption.AUTO_READ, ctx.channel().isWritable());
         }
@@ -102,7 +101,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        proxyManager.removeFaceProxyChannel(proxyManager.findUserByChannel(ctx.channel()));
+        proxyManager.removeFaceProxyChannel(proxyManager.findByChannel(ctx.channel()));
         super.channelInactive(ctx);
     }
 }

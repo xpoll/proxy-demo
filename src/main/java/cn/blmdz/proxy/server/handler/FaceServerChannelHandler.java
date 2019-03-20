@@ -2,10 +2,13 @@ package cn.blmdz.proxy.server.handler;
 
 import java.net.InetSocketAddress;
 
+import cn.blmdz.proxy.enums.MessageType;
+import cn.blmdz.proxy.model.Message;
 import cn.blmdz.proxy.model.ProxyChannel;
 import cn.blmdz.proxy.service.ProxyManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
@@ -28,9 +31,13 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
         Integer port = ((InetSocketAddress) ctx.channel().localAddress()).getPort();
-        
-        ProxyChannel proxyChannel = proxyManager.findUserByAuthCodeFaceServerPort(port);
-        
+        ProxyChannel proxy = proxyManager.findByFaceServerPort(port);
+        if (proxy == null) {
+        	ctx.channel().close();
+        } else {
+        	proxyManager.addFaceServerChannel(proxy, ctx.channel());
+        }
+        super.channelActive(ctx);
     }
     
     /**
@@ -38,7 +45,16 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
      */
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        
+    	ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
+    	if (proxy == null) {
+    		ctx.channel().close();
+    		return ;
+    	}
+    	
+        byte[] bytes = new byte[msg.readableBytes()];
+        msg.readBytes(bytes);
+    	
+    	proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.TRANSFER, null, bytes));
     }
 
     /**
@@ -46,7 +62,13 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        
+    	ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
+    	if (proxy == null) {
+    		ctx.channel().close();
+    	} else {
+    		proxyManager.removeFaceServerChannel(proxy);
+    	}
+    	super.channelInactive(ctx);
     }
 
     /**
@@ -54,6 +76,12 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
      */
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+    	ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
+    	if (proxy == null) {
+    		ctx.channel().close();
+    		return ;
+    	}
+    	proxy.getFaceProxyChannel().config().setOption(ChannelOption.AUTO_READ, ctx.channel().isWritable());
         
     }
 

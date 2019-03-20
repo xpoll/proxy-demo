@@ -12,7 +12,7 @@ public class ContainerHelper {
 
     private static volatile boolean running = true;
     
-    private static Object obj = new Object();
+//    private static Object obj = new Object();
 
     private static List<Container> containers;
     
@@ -28,18 +28,18 @@ public class ContainerHelper {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                synchronized (obj) {
+                synchronized (ContainerHelper.class) {
                     ContainerHelper.stop();
                     ContainerHelper.running = false;
-                    obj.getClass().notify();
+                    ContainerHelper.class.notify();
                 }
             }
         });
         
-        synchronized (obj) {
+        synchronized (ContainerHelper.class) {
             while (running) {
                 try {
-                    obj.getClass().wait();
+                	ContainerHelper.class.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
