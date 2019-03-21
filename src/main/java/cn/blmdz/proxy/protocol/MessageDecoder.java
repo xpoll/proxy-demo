@@ -8,54 +8,46 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
 public class MessageDecoder extends LengthFieldBasedFrameDecoder {
 
-    private static final byte HEADER_SIZE = 4;
+    private static final int LENGTH_SIZE = 1;
     private static final int TYPE_SIZE = 1;
-//    private static final int SERIAL_NUMBER_SIZE = 8;
-    private static final int URI_LENGTH_SIZE = 1;
+    
 
-    public MessageDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment,
-            int initialBytesToStrip) {
-        super(maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip);
+    private static final int MAX_FRAME_LENGTH = 2 * 1024 * 1024;
+    private static final int LENGTH_FIELD_OFFSET = 0;
+    private static final int LENGTH_FIELD_LENGTH = 4;
+    private static final int INITIAL_BYTES_TO_STRIP = 0;
+    private static final int LENGTH_ADJUSTMENT = 0;
+
+    public MessageDecoder() {
+        super(MAX_FRAME_LENGTH, LENGTH_FIELD_OFFSET, LENGTH_FIELD_LENGTH, INITIAL_BYTES_TO_STRIP, LENGTH_ADJUSTMENT);
     }
-
-    public MessageDecoder(int maxFrameLength, int lengthFieldOffset, int lengthFieldLength, int lengthAdjustment,
-            int initialBytesToStrip, boolean failFast) {
-        super(maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip, failFast);
-    }
-
 
     @Override
     protected Message decode(ChannelHandlerContext ctx, ByteBuf in2) throws Exception {
+//      System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ByteBuf in = (ByteBuf) super.decode(ctx, in2);
-        if (in == null) {
-            return null;
-        }
+        if (in == null) return null;
 
-        if (in.readableBytes() < HEADER_SIZE) {
-            return null;
-        }
+        if (in.readableBytes() < LENGTH_FIELD_LENGTH) return null;
 
-        int frameLength = in.readInt();
-        if (in.readableBytes() < frameLength) {
-            return null;
-        }
+        int length = in.readInt();
+        if (in.readableBytes() < length) return null;
+        
         Message msg = new Message();
         byte type = in.readByte();
-//        long sn = in.readLong();
-//        msg.setSerialNumber(sn);
-
         msg.setType(MessageType.conversion(type));
 
-        byte uriLength = in.readByte();
-        byte[] uriBytes = new byte[uriLength];
+        byte paramsLength = in.readByte();
+        byte[] uriBytes = new byte[paramsLength];
         in.readBytes(uriBytes);
         msg.setParams(new String(uriBytes));
 
-        byte[] data = new byte[frameLength - TYPE_SIZE /*- SERIAL_NUMBER_SIZE */- URI_LENGTH_SIZE - uriLength];
+        byte[] data = new byte[length - LENGTH_SIZE - TYPE_SIZE - paramsLength];
         in.readBytes(data);
         msg.setData(data);
 
         in.release();
+//        System.out.println(JSON.toJSONString(msg));
         return msg;
     }
 }

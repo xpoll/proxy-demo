@@ -11,10 +11,13 @@ public enum MessageType {
 	DISCONNECT((byte) 0x04, "连接中断"),
     TRANSFER((byte) 0x05, "传输数据"),
     PORT((byte) 0x06, "告诉代理端暴露的端口"),
+    UNKNOWPORT((byte) 0x07, "告诉服务端改端口代理端未开启"),
 	;
 	private byte value;
 	
-	MessageType(byte value, String description) {}
+	MessageType(byte value, String description) {
+	    this.value = value;
+	}
 	
 	public byte value() {
 		return this.value;

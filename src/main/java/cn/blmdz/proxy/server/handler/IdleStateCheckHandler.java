@@ -14,8 +14,8 @@ public class IdleStateCheckHandler extends IdleStateHandler {
 
     public static final int WRITE_IDLE_TIME = 40;
 
-    public IdleStateCheckHandler(int readerIdleTimeSeconds, int writerIdleTimeSeconds, int allIdleTimeSeconds) {
-        super(readerIdleTimeSeconds, writerIdleTimeSeconds, allIdleTimeSeconds);
+    public IdleStateCheckHandler() {
+        super(READ_IDLE_TIME, WRITE_IDLE_TIME, USER_CHANNEL_READ_IDLE_TIME);
     }
 
     @Override

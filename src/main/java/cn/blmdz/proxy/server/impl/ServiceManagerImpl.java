@@ -1,4 +1,4 @@
-package cn.blmdz.proxy.service;
+package cn.blmdz.proxy.server.impl;
 
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +23,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.AttributeKey;
 
-public class ProxyManagerImpl implements ProxyManager {
+public class ServiceManagerImpl implements ServiceManager {
     
     private static final AttributeKey<Integer> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
     
@@ -128,8 +128,8 @@ public class ProxyManagerImpl implements ProxyManager {
 
 	@Override
 	public void removeFaceServerChannel(ProxyChannel proxy) {
-		proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.DISCONNECT));
-		proxy.getFaceProxyChannel().config().setOption(ChannelOption.AUTO_READ, true);
+//		proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.DISCONNECT));
+//		proxy.getFaceProxyChannel().config().setOption(ChannelOption.AUTO_READ, true);
 		proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
 		proxy.setFaceServerChannel(null);
 	}

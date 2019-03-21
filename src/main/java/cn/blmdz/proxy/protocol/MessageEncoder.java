@@ -7,34 +7,29 @@ import io.netty.handler.codec.MessageToByteEncoder;
 
 public class MessageEncoder extends MessageToByteEncoder<Message> {
 
+    private static final int LENGTH_SIZE = 1;
     private static final int TYPE_SIZE = 1;
-
-//    private static final int SERIAL_NUMBER_SIZE = 8;
-
-    private static final int URI_LENGTH_SIZE = 1;
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-        int bodyLength = TYPE_SIZE/* + SERIAL_NUMBER_SIZE*/ + URI_LENGTH_SIZE;
-        byte[] uriBytes = null;
+//        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+//        System.out.println(JSON.toJSONString(msg));
+        int bodyLength = LENGTH_SIZE + TYPE_SIZE;
+        byte[] paramsBytes = null;
         if (msg.getParams() != null) {
-            uriBytes = msg.getParams().getBytes();
-            bodyLength += uriBytes.length;
+            paramsBytes = msg.getParams().getBytes();
+            bodyLength += paramsBytes.length;
         }
 
         if (msg.getData() != null) {
             bodyLength += msg.getData().length;
         }
 
-        // write the total packet length but without length field's length.
         out.writeInt(bodyLength);
-
         out.writeByte(msg.getType().value());
-//        out.writeLong(msg.getSerialNumber());
-
-        if (uriBytes != null) {
-            out.writeByte((byte) uriBytes.length);
-            out.writeBytes(uriBytes);
+        if (paramsBytes != null) {
+            out.writeByte((byte) paramsBytes.length);
+            out.writeBytes(paramsBytes);
         } else {
             out.writeByte((byte) 0x00);
         }

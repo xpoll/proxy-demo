@@ -1,9 +1,9 @@
-package cn.blmdz.proxy.service;
+package cn.blmdz.proxy.server.impl;
 
 import cn.blmdz.proxy.model.ProxyChannel;
 import io.netty.channel.Channel;
 
-public interface ProxyManager {
+public interface ServiceManager {
 
     ProxyChannel findByAuthCodeFaceProxyPort(String param);
 

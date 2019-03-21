@@ -28,11 +28,26 @@ public class Message {
 	 */
 	private byte[] data;
 	
+    /** 消息流水号 */
+//    private long serialNumber;
+	
 	public Message(MessageType type) {
 		this.type = type;
 	}
-	
-	public Message(MessageType type, String params) {
-		this.type = type;
-	}
+
+    public Message(MessageType type, String params) {
+        this.type = type;
+        this.params = params;
+    }
+    
+    public Message(MessageType type, byte[] data) {
+        this.type = type;
+        this.data = data;
+    }
+    
+//    public Message(MessageType type, String params, byte[] data) {
+//        this.type = type;
+//        this.params = params;
+//        this.data = data;
+//    }
 }

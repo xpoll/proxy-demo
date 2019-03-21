@@ -1,8 +1,13 @@
 package cn.blmdz.proxy.client;
 
+import java.util.Arrays;
+
 import com.alibaba.fastjson.JSON;
 
+import cn.blmdz.proxy.client.handler.FaceProxyChannelHandler;
+import cn.blmdz.proxy.client.handler.FaceServerChannelHandler;
 import cn.blmdz.proxy.enums.MessageType;
+import cn.blmdz.proxy.helper.ContainerHelper;
 import cn.blmdz.proxy.interfaces.Container;
 import cn.blmdz.proxy.model.Message;
 import cn.blmdz.proxy.model.ProxyRequestServerParam;
@@ -20,16 +25,13 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class ClientContainer implements Container {
 
-    private NioEventLoopGroup workerGroup;
-    private Bootstrap bootstrapServer;
-    private Bootstrap bootstrapProxy;
-    private Channel channel;
+    private static NioEventLoopGroup workerGroup;
+    private static Bootstrap bootstrapProxy;
+    public static Bootstrap bootstrapServer;
+    public static Channel channelServer;
+    public static Channel channelProxy;
 
-    private static final int MAX_FRAME_LENGTH = 2 * 1024 * 1024;
-    private static final int LENGTH_FIELD_OFFSET = 0;
-    private static final int LENGTH_FIELD_LENGTH = 4;
-    private static final int INITIAL_BYTES_TO_STRIP = 0;
-    private static final int LENGTH_ADJUSTMENT = 0;
+    public static ProxyRequestServerParam serverParam = new ProxyRequestServerParam("babababa", 8080);
     
 	@Override
 	public void start() {
@@ -40,16 +42,8 @@ public class ClientContainer implements Container {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
 				// 面向真实服务器业务处理器
-//				ch.pipeline().addLast(handlers);
+				ch.pipeline().addLast(new FaceServerChannelHandler());
 			}
-        });
-        bootstrapServer.bind("127.0.0.1", 7788).addListener(new ChannelFutureListener() {
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				channel = future.channel();
-				future.channel().writeAndFlush(new Message(MessageType.AUTH, JSON.toJSONString(new ProxyRequestServerParam("ababab", 8080))));
-			}
-        	
         });
         
         bootstrapProxy = new Bootstrap();
@@ -57,16 +51,28 @@ public class ClientContainer implements Container {
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
                 // 解码处理器
-                ch.pipeline().addLast(new MessageDecoder(MAX_FRAME_LENGTH, LENGTH_FIELD_OFFSET, LENGTH_FIELD_LENGTH, LENGTH_ADJUSTMENT, INITIAL_BYTES_TO_STRIP));
+                ch.pipeline().addLast(new MessageDecoder());
                 // 编码处理器
                 ch.pipeline().addLast(new MessageEncoder());
                 // 心跳检测处理器
-                ch.pipeline().addLast(new IdleStateCheckHandler(IdleStateCheckHandler.READ_IDLE_TIME, IdleStateCheckHandler.WRITE_IDLE_TIME, 0));
+                ch.pipeline().addLast(new IdleStateCheckHandler());
                 // 面向服务器业务处理器
-//            	ch.pipeline().addLast(handlers);
+            	ch.pipeline().addLast(new FaceProxyChannelHandler());
 			}
         });
-		
+        bootstrapProxy.connect("127.0.0.1", 7788).addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (future.isSuccess()) {
+                    channelProxy = future.channel();
+                    future.channel().writeAndFlush(new Message(MessageType.AUTH, JSON.toJSONString(serverParam)));
+                } else {
+                    System.out.println("连接服务器失败");
+                }
+            }
+        });
+
+        System.out.println("Proxy start success ...");
 	}
 
 	@Override
@@ -74,4 +80,7 @@ public class ClientContainer implements Container {
         workerGroup.shutdownGracefully();
 	}
 
+    public static void main(String[] args) {
+        ContainerHelper.start(Arrays.asList(new Container[] { new ClientContainer() }));
+    }
 }
