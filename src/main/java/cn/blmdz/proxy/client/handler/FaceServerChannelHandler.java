@@ -41,7 +41,6 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ClientContainer.channelServer = null;
-        ClientContainer.channelProxy.writeAndFlush(new Message(MessageType.UNKNOWPORT, JSON.toJSONString(ClientContainer.serverParam)));
         super.channelInactive(ctx);
     }
 

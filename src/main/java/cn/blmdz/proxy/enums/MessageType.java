@@ -10,18 +10,25 @@ public enum MessageType {
 	CONNECT((byte) 0x03, "连接"),
 	DISCONNECT((byte) 0x04, "连接中断"),
     TRANSFER((byte) 0x05, "传输数据"),
-    PORT((byte) 0x06, "告诉代理端暴露的端口"),
-    UNKNOWPORT((byte) 0x07, "告诉服务端改端口代理端未开启"),
+    PORT((byte) 0x06, "暴露的端口"),
+    UNKNOWPORT((byte) 0x07, "代理端访问端口未开启"),
+    DESTORYCONNECT((byte) 0x08, "代理端端口无人访问，现请求关闭"),
 	;
-	private byte value;
+    private byte value;
+    
+    private String description;
 	
 	MessageType(byte value, String description) {
-	    this.value = value;
-	}
-	
-	public byte value() {
-		return this.value;
-	}
+        this.value = value;
+        this.description = description;
+    }
+
+    public byte value() {
+        return this.value;
+    }
+    public String description() {
+        return this.description;
+    }
 	
 	public static MessageType conversion(byte value) {
 		for (MessageType item : MessageType.values()) {

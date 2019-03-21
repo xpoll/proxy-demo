@@ -28,9 +28,6 @@ public class Message {
 	 */
 	private byte[] data;
 	
-    /** 消息流水号 */
-//    private long serialNumber;
-	
 	public Message(MessageType type) {
 		this.type = type;
 	}

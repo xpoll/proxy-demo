@@ -99,7 +99,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
     
     private void unknowportMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-
+        System.out.println(msg.getType().description());
         ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
         if (proxy.getFaceServerChannel() == null) return ;
         proxy.getFaceServerChannel().close();

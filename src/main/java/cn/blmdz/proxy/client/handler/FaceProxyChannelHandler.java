@@ -35,6 +35,8 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
         case PORT:
             portMessageHandler(ctx, msg);
             break;
+        case DESTORYCONNECT:
+            distoryconnectMessageHandler(ctx, msg);
         default:
             break;
         }
@@ -75,6 +77,14 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
     private void portMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         System.out.println("外部端口为: " + msg.getParams());
+    }
+    
+    private void distoryconnectMessageHandler(ChannelHandlerContext ctx, Message msg) {
+        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+        if (ClientContainer.channelServer != null) {
+            ClientContainer.channelServer.close();
+            ClientContainer.channelServer = null;
+        }
     }
 
     /**

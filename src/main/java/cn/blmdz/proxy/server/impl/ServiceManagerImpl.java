@@ -79,10 +79,13 @@ public class ServiceManagerImpl implements ServiceManager {
 
     @Override
     public synchronized void removeFaceProxyChannel(ProxyChannel proxy) {
-        if (proxy == null) return ;
+        if (proxy == null) {
+            System.out.println("proxy is null");
+            return ;
+        }
         FACE_SERVER_MAP.remove(proxy.getFaceServerPort());
         FACE_PROXY_MAP.remove(getKey(new ProxyRequestServerParam(proxy.getAppId(), proxy.getFaceProxyPort())));
-        if (proxy != null) {
+        if (proxy.getFaceProxyChannel() != null) {
             proxy.getFaceProxyChannel().attr(CHANNEL_ID).remove();
             proxy.getFaceProxyChannel().writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
             proxy.getFaceProxyChannel().close();
@@ -130,6 +133,7 @@ public class ServiceManagerImpl implements ServiceManager {
 	public void removeFaceServerChannel(ProxyChannel proxy) {
 //		proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.DISCONNECT));
 //		proxy.getFaceProxyChannel().config().setOption(ChannelOption.AUTO_READ, true);
+	    proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.DESTORYCONNECT));
 		proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
 		proxy.setFaceServerChannel(null);
 	}
