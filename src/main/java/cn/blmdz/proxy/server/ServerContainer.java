@@ -3,12 +3,12 @@ package cn.blmdz.proxy.server;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
+import cn.blmdz.proxy.handler.IdleStateCheckHandler;
 import cn.blmdz.proxy.helper.ContainerHelper;
 import cn.blmdz.proxy.interfaces.Container;
 import cn.blmdz.proxy.protocol.MessageDecoder;
 import cn.blmdz.proxy.protocol.MessageEncoder;
 import cn.blmdz.proxy.server.handler.FaceProxyChannelHandler;
-import cn.blmdz.proxy.server.handler.IdleStateCheckHandler;
 import cn.blmdz.proxy.server.impl.ServiceManager;
 import cn.blmdz.proxy.server.impl.ServiceManagerImpl;
 import io.netty.bootstrap.ServerBootstrap;

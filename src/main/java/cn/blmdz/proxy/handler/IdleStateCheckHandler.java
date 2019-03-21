@@ -1,4 +1,4 @@
-package cn.blmdz.proxy.server.handler;
+package cn.blmdz.proxy.handler;
 
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.model.Message;
