@@ -49,11 +49,11 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
                     ClientContainer.channelServer = future.channel();
-                    ClientContainer.channelProxy.writeAndFlush(new Message(MessageType.CONNECT, JSON.toJSONString(ClientContainer.serverParam)));
+                    ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.CONNECT, JSON.toJSONString(ClientContainer.serverParam)));
                     future.channel().config().setOption(ChannelOption.AUTO_READ, true);
                 } else {
                     ClientContainer.channelServer = null;
-                    ClientContainer.channelProxy.writeAndFlush(new Message(MessageType.UNKNOWPORT, JSON.toJSONString(ClientContainer.serverParam)));
+                    ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.UNKNOWPORT, JSON.toJSONString(ClientContainer.serverParam)));
                 }
             }
         });

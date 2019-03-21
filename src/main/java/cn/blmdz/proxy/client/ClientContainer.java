@@ -65,7 +65,7 @@ public class ClientContainer implements Container {
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
                     channelProxy = future.channel();
-                    future.channel().writeAndFlush(new Message(MessageType.AUTH, JSON.toJSONString(serverParam)));
+                    future.channel().writeAndFlush(Message.build(MessageType.AUTH, JSON.toJSONString(serverParam)));
                 } else {
                     System.out.println("连接服务器失败");
                 }

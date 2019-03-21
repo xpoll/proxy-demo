@@ -24,7 +24,6 @@ public class MessageDecoder extends LengthFieldBasedFrameDecoder {
 
     @Override
     protected Message decode(ChannelHandlerContext ctx, ByteBuf in2) throws Exception {
-//      System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ByteBuf in = (ByteBuf) super.decode(ctx, in2);
         if (in == null) return null;
 
@@ -33,21 +32,16 @@ public class MessageDecoder extends LengthFieldBasedFrameDecoder {
         int length = in.readInt();
         if (in.readableBytes() < length) return null;
         
-        Message msg = new Message();
         byte type = in.readByte();
-        msg.setType(MessageType.conversion(type));
 
         byte paramsLength = in.readByte();
-        byte[] uriBytes = new byte[paramsLength];
-        in.readBytes(uriBytes);
-        msg.setParams(new String(uriBytes));
+        byte[] paramsBytes = new byte[paramsLength];
+        in.readBytes(paramsBytes);
 
         byte[] data = new byte[length - LENGTH_SIZE - TYPE_SIZE - paramsLength];
         in.readBytes(data);
-        msg.setData(data);
-
         in.release();
-//        System.out.println(JSON.toJSONString(msg));
-        return msg;
+        
+        return Message.build(MessageType.conversion(type), new String(paramsBytes), data);
     }
 }

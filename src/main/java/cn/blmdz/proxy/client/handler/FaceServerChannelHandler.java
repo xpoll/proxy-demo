@@ -31,7 +31,7 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
         byte[] bytes = new byte[msg.readableBytes()];
         msg.readBytes(bytes);
         
-        ClientContainer.channelProxy.writeAndFlush(new Message(MessageType.TRANSFER, JSON.toJSONString(ClientContainer.serverParam), bytes));
+        ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.TRANSFER, JSON.toJSONString(ClientContainer.serverParam), bytes));
     }
 
     /**

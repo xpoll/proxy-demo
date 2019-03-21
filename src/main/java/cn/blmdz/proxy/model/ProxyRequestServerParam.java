@@ -1,12 +1,5 @@
 package cn.blmdz.proxy.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class ProxyRequestServerParam {
 	/**
 	 * appId
@@ -16,4 +9,16 @@ public class ProxyRequestServerParam {
 	 * 代理指向的客户端本地的端口
 	 */
 	private Integer port;
+	
+	public String getAppId() {
+		return appId;
+	}
+	public Integer getPort() {
+		return port;
+	}
+	
+	public ProxyRequestServerParam(String appId, Integer port) {
+		this.appId = appId;
+		this.port = port;
+	}
 }

@@ -1,11 +1,13 @@
 package cn.blmdz.proxy.server.impl;
 
+import java.net.DatagramSocket;
+import java.net.Socket;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Maps;
 
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.model.Message;
@@ -28,19 +30,39 @@ public class ServiceManagerImpl implements ServiceManager {
     private static final AttributeKey<Integer> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
     
     // port
-    private AtomicInteger portGenerate = new AtomicInteger(23333);
+    private AtomicInteger portGenerate = new AtomicInteger(33333);
 	
 	// 代理端端口与 ProxyChannel 的映射
-	private Map<String, ProxyChannel> FACE_PROXY_MAP = Maps.newHashMap();
+	private Map<String, ProxyChannel> FACE_PROXY_MAP = new HashMap<>();
 	
 	// 服务器端口与 ProxyChannel 的映射
-    private Map<Integer, ProxyChannel> FACE_SERVER_MAP = Maps.newHashMap();
+    private Map<Integer, ProxyChannel> FACE_SERVER_MAP = new HashMap<>();
     
     /**
      * 组合key => appId_port
      */
     private String getKey(ProxyRequestServerParam param) {
         return param.getAppId() + "_" + param.getPort();
+    }
+    
+    private synchronized Integer generatePort() {
+    	int port = portGenerate.incrementAndGet();
+
+    	try {
+    		Socket s = new Socket("0.0.0.0", port);
+    		s.close();
+    	} catch (Exception e) {
+    		return generatePort();
+    	}
+    	
+    	try {
+    		DatagramSocket s = new DatagramSocket(port);
+    		s.close();
+    	} catch (Exception e) {
+    		return generatePort();
+    	}
+    	
+    	return port;
     }
 	
 
@@ -61,7 +83,7 @@ public class ServiceManagerImpl implements ServiceManager {
         if (proxy != null) {
             return null;
         }
-        int faceServerPort = portGenerate.incrementAndGet();// 分配一个端口
+        int faceServerPort = generatePort();// 分配一个端口
         ServerBootstrap bootstrap = faceServerBootstrap();
         try {
             bootstrap.bind(faceServerPort).get();
@@ -122,7 +144,7 @@ public class ServiceManagerImpl implements ServiceManager {
 	@Override
 	public ProxyChannel addFaceServerChannel(ProxyChannel proxy, Channel channel) {
 		channel.config().setOption(ChannelOption.AUTO_READ, false);
-    	proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.CONNECT));
+    	proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.CONNECT));
 		proxy.setFaceServerChannel(channel);
 		channel.attr(CHANNEL_ID).set(proxy.getFaceServerPort());
 		return proxy;
@@ -131,9 +153,7 @@ public class ServiceManagerImpl implements ServiceManager {
 
 	@Override
 	public void removeFaceServerChannel(ProxyChannel proxy) {
-//		proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.DISCONNECT));
-//		proxy.getFaceProxyChannel().config().setOption(ChannelOption.AUTO_READ, true);
-	    proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.DESTORYCONNECT));
+	    proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.DESTORYCONNECT));
 		proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
 		proxy.setFaceServerChannel(null);
 	}

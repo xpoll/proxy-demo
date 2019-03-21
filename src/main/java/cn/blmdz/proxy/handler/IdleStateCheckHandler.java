@@ -22,7 +22,7 @@ public class IdleStateCheckHandler extends IdleStateHandler {
     protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) throws Exception {
 
         if (IdleStateEvent.FIRST_WRITER_IDLE_STATE_EVENT == evt) {
-            ctx.channel().writeAndFlush(new Message(MessageType.HEARTBEAT));
+            ctx.channel().writeAndFlush(Message.build(MessageType.HEARTBEAT));
         } else if (IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT == evt) {
             ctx.channel().close();
         }

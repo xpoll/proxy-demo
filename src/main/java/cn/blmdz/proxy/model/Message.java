@@ -1,16 +1,10 @@
 package cn.blmdz.proxy.model;
 
 import cn.blmdz.proxy.enums.MessageType;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * 消息体
  */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class Message {
 
 	/**
@@ -27,24 +21,38 @@ public class Message {
 	 * 消息数据
 	 */
 	private byte[] data;
+
+	public MessageType getType() {
+		return type;
+	}
 	
-	public Message(MessageType type) {
-		this.type = type;
+	public String getParams() {
+		return params;
+	}
+	
+	public byte[] getData() {
+		return data;
 	}
 
-    public Message(MessageType type, String params) {
-        this.type = type;
-        this.params = params;
+	public static Message build(MessageType type) {
+		return new Message(type, null, null);
+	}
+
+	public static Message build(MessageType type, String params) {
+		return new Message(type, params, null);
     }
     
-    public Message(MessageType type, byte[] data) {
-        this.type = type;
-        this.data = data;
+	public static Message build(MessageType type, byte[] data) {
+		return new Message(type, null, data);
     }
+	
+	public static Message build(MessageType type, String params, byte[] data) {
+		return new Message(type, params, data);
+	}
     
-//    public Message(MessageType type, String params, byte[] data) {
-//        this.type = type;
-//        this.params = params;
-//        this.data = data;
-//    }
+	private Message(MessageType type, String params, byte[] data) {
+		this.type = type;
+		this.params = params;
+		this.data = data;
+	}
 }

@@ -62,7 +62,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 	        ctx.channel().close();
 	        return ;
 	    }
-	    proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.PORT, String.valueOf(proxy.getFaceServerPort())));
+	    proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.PORT, String.valueOf(proxy.getFaceServerPort())));
 	}
 
     private void connectMessageHandler(ChannelHandlerContext ctx, Message msg) {
@@ -84,7 +84,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 	
 	private void heartbeatMessageHandler(ChannelHandlerContext ctx) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-		ctx.channel().writeAndFlush(new Message(MessageType.HEARTBEAT));
+		ctx.channel().writeAndFlush(Message.build(MessageType.HEARTBEAT));
 	}
 
     private void transferMessageHandler(ChannelHandlerContext ctx, Message msg) {

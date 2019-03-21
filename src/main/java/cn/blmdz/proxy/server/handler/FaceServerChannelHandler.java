@@ -55,7 +55,7 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
         byte[] bytes = new byte[msg.readableBytes()];
         msg.readBytes(bytes);
     	
-    	proxy.getFaceProxyChannel().writeAndFlush(new Message(MessageType.TRANSFER, bytes));
+    	proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.TRANSFER, bytes));
     }
 
     /**
