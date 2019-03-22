@@ -54,7 +54,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
                 if (future.isSuccess()) {
                     ClientContainer.channelServer = future.channel();
                     ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.CONNECT, JSON.toJSONString(ClientContainer.serverParam)));
-                    future.channel().config().setOption(ChannelOption.AUTO_READ, true);
+//                    future.channel().config().setOption(ChannelOption.AUTO_READ, true);
                 } else {
                     ClientContainer.channelServer = null;
                     ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.UNKNOWPORT, JSON.toJSONString(ClientContainer.serverParam)));
@@ -73,6 +73,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 
     private void transferMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+        if (ClientContainer.channelServer == null) return ;
         ByteBuf buf = ctx.alloc().buffer(msg.getData().length);
         buf.writeBytes(msg.getData());
         ClientContainer.channelServer.writeAndFlush(buf);

@@ -92,7 +92,7 @@ public class ClientContainer implements Container {
         SERVER_PORT = 7788;
         
         CLIENT_HOST = "0.0.0.0";
-        CLIENT_PORT = 8081;
+        CLIENT_PORT = 8080;
         
         serverParam = new ProxyRequestServerParam(APPID, CLIENT_PORT);
         ContainerHelper.start(Arrays.asList(new Container[] { new ClientContainer() }));
