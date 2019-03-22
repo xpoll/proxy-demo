@@ -37,6 +37,10 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
             break;
         case DESTORYCONNECT:
             distoryconnectMessageHandler(ctx, msg);
+            break;
+        case ALREADY:
+            alreadyMessageHandler(ctx, msg);
+            break;
         default:
             break;
         }
@@ -44,7 +48,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 
     private void connectMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        ClientContainer.bootstrapServer.connect("0.0.0.0", ClientContainer.serverParam.getPort()).addListener(new ChannelFutureListener() {
+        ClientContainer.bootstrapServer.connect(ClientContainer.CLIENT_HOST, ClientContainer.CLIENT_PORT).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
@@ -87,6 +91,12 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
         }
     }
 
+    private void alreadyMessageHandler(ChannelHandlerContext ctx, Message msg) {
+        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+        System.out.println("该APPID和端口已经被链接");
+        System.exit(-1);
+    }
+
     /**
      * Channel 可写性已更改
      */
@@ -105,8 +115,12 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        ClientContainer.channelServer.close();
+        if (ClientContainer.channelServer != null) {
+            ClientContainer.channelServer.close();
+        }
         super.channelInactive(ctx);
+        System.out.println("链接失败 。。 关闭 。。");
+        System.exit(-1);
     }
 
     @Override

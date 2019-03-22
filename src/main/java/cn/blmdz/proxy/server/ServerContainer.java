@@ -25,6 +25,9 @@ public class ServerContainer implements Container {
 	public static NioEventLoopGroup workGroup;
 	
 	public static ServiceManager proxyManager;
+	
+    public static String SERVER_HOST;
+    public static Integer SERVER_PORT;
 
 	@Override
 	public void start() {
@@ -48,7 +51,7 @@ public class ServerContainer implements Container {
         });
         
         try {
-            bootstrapServer.bind("0.0.0.0", 7788).get();
+            bootstrapServer.bind(SERVER_HOST, SERVER_PORT).get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -62,6 +65,9 @@ public class ServerContainer implements Container {
 	}
 	
 	public static void main(String[] args) {
+        SERVER_HOST = "0.0.0.0";
+        SERVER_PORT = 7788;
+        
 		ContainerHelper.start(Arrays.asList(new Container[] { new ServerContainer() }));
 	}
 }

@@ -1,7 +1,8 @@
 package cn.blmdz.proxy.server.impl;
 
-import java.net.DatagramSocket;
-import java.net.Socket;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -20,7 +21,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.AttributeKey;
@@ -30,7 +30,7 @@ public class ServiceManagerImpl implements ServiceManager {
     private static final AttributeKey<Integer> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
     
     // port
-    private AtomicInteger portGenerate = new AtomicInteger(33333);
+    private static AtomicInteger portGenerate = new AtomicInteger(33333);
 	
 	// 代理端端口与 ProxyChannel 的映射
 	private Map<String, ProxyChannel> FACE_PROXY_MAP = new HashMap<>();
@@ -45,24 +45,40 @@ public class ServiceManagerImpl implements ServiceManager {
         return param.getAppId() + "_" + param.getPort();
     }
     
-    private synchronized Integer generatePort() {
-    	int port = portGenerate.incrementAndGet();
+    private static synchronized Integer generatePort() {
+        int port = portGenerate.incrementAndGet();
 
-    	try {
-    		Socket s = new Socket("0.0.0.0", port);
-    		s.close();
-    	} catch (Exception e) {
-    		return generatePort();
-    	}
-    	
-    	try {
-    		DatagramSocket s = new DatagramSocket(port);
-    		s.close();
-    	} catch (Exception e) {
-    		return generatePort();
-    	}
-    	
-    	return port;
+        String cmd = null;
+        if (System.getProperty("os.name").toLowerCase().contains("window")) {
+            // cmd = "netstat -an | findstr " + port;// 无效
+            cmd = "netstat -an";
+        } else {
+            cmd = "netstat -an --ip | grep " + port;
+        }
+        BufferedReader br = null;
+        try {
+            Process process = Runtime.getRuntime().exec(cmd);
+            br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line = null;
+            StringBuilder sb = new StringBuilder();
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+            if (sb.toString().contains(":" + port)) {
+                return generatePort();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return generatePort();
+        } finally {
+            try {
+                if (br != null) br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return port;
+
     }
 	
 
@@ -114,10 +130,8 @@ public class ServiceManagerImpl implements ServiceManager {
             if (proxy.getFaceServerChannel() != null) {
                 proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
                 proxy.getFaceServerChannel().writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-//                proxy.getFaceServerChannel().close();
             }
         }
-        // 如何退出并关闭
     }
 
     @Override
@@ -143,7 +157,7 @@ public class ServiceManagerImpl implements ServiceManager {
 
 	@Override
 	public ProxyChannel addFaceServerChannel(ProxyChannel proxy, Channel channel) {
-		channel.config().setOption(ChannelOption.AUTO_READ, false);
+//		channel.config().setOption(ChannelOption.AUTO_READ, false); // TODO
     	proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.CONNECT));
 		proxy.setFaceServerChannel(channel);
 		channel.attr(CHANNEL_ID).set(proxy.getFaceServerPort());

@@ -13,6 +13,7 @@ public enum MessageType {
     PORT((byte) 0x06, "暴露的端口"),
     UNKNOWPORT((byte) 0x07, "代理端访问端口未开启"),
     DESTORYCONNECT((byte) 0x08, "代理端端口无人访问，现请求关闭"),
+    ALREADY((byte) 0x09, "该链接已经建立"),
 	;
     private byte value;
     

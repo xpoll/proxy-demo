@@ -57,7 +57,12 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 	
 	private void authMessageHandler(ChannelHandlerContext ctx, Message msg) {
 	    System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-	    ProxyChannel proxy = proxyManager.addFaceProxyChannel(msg.getParams(), ctx.channel());
+        ProxyChannel proxy = proxyManager.findByAuthCodeFaceProxyPort(msg.getParams());
+        if (proxy != null) {
+            ctx.channel().writeAndFlush(Message.build(MessageType.ALREADY));
+            ctx.channel().close();
+        }
+	    proxy = proxyManager.addFaceProxyChannel(msg.getParams(), ctx.channel());
 	    if (proxy == null) {
 	        ctx.channel().close();
 	        return ;
@@ -73,7 +78,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
             return ;
         }
         if (proxy.getFaceServerChannel() != null) {
-        	proxy.getFaceServerChannel().config().setOption(ChannelOption.AUTO_READ, true);
+//        	proxy.getFaceServerChannel().config().setOption(ChannelOption.AUTO_READ, true); // TODO
         }
     }
     

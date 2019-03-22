@@ -34,8 +34,11 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
         ProxyChannel proxy = proxyManager.findByFaceServerPort(port);
         if (proxy == null) {
         	ctx.channel().close();
+        } else if (proxy.getFaceServerChannel() != null) {
+            ctx.channel().writeAndFlush(Message.build(MessageType.ALREADY));
+            ctx.channel().close();
         } else {
-        	proxyManager.addFaceServerChannel(proxy, ctx.channel());
+            proxyManager.addFaceServerChannel(proxy, ctx.channel());
         }
         super.channelActive(ctx);
     }

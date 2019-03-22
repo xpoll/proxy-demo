@@ -31,7 +31,12 @@ public class ClientContainer implements Container {
     public static Channel channelServer;
     public static Channel channelProxy;
 
-    public static ProxyRequestServerParam serverParam = new ProxyRequestServerParam("babababa", 8080);
+    public static ProxyRequestServerParam serverParam;
+    
+    public static String SERVER_HOST;
+    public static Integer SERVER_PORT;
+    public static String CLIENT_HOST;
+    public static Integer CLIENT_PORT;
     
 	@Override
 	public void start() {
@@ -60,7 +65,7 @@ public class ClientContainer implements Container {
             	ch.pipeline().addLast(new FaceProxyChannelHandler());
 			}
         });
-        bootstrapProxy.connect("127.0.0.1", 7788).addListener(new ChannelFutureListener() {
+        bootstrapProxy.connect(SERVER_HOST, SERVER_PORT).addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
@@ -81,6 +86,15 @@ public class ClientContainer implements Container {
 	}
 
     public static void main(String[] args) {
+        String APPID = "babababa";
+        SERVER_HOST = "127.0.0.1";
+//        SERVER_HOST = "blmdz.cn";
+        SERVER_PORT = 7788;
+        
+        CLIENT_HOST = "0.0.0.0";
+        CLIENT_PORT = 8081;
+        
+        serverParam = new ProxyRequestServerParam(APPID, CLIENT_PORT);
         ContainerHelper.start(Arrays.asList(new Container[] { new ClientContainer() }));
     }
 }
