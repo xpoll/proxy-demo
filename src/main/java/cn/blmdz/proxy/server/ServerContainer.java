@@ -65,8 +65,14 @@ public class ServerContainer implements Container {
 	}
 	
 	public static void main(String[] args) {
-        SERVER_HOST = "0.0.0.0";
-        SERVER_PORT = 7788;
+//        SERVER_HOST = "0.0.0.0";
+//        SERVER_PORT = 7788;
+	    
+        if (args == null || args.length != 1) {
+            System.out.println("args params is error.");
+        }
+        SERVER_HOST = args[0].split(":")[0];
+        SERVER_PORT = Integer.parseInt(args[0].split(":")[1]);
         
 		ContainerHelper.start(Arrays.asList(new Container[] { new ServerContainer() }));
 	}

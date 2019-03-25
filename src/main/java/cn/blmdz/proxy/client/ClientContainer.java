@@ -86,13 +86,22 @@ public class ClientContainer implements Container {
 	}
 
     public static void main(String[] args) {
-        String APPID = "babababa";
-        SERVER_HOST = "127.0.0.1";
-//        SERVER_HOST = "blmdz.cn";
-        SERVER_PORT = 7788;
+//        String APPID = "babababa";
+//        SERVER_HOST = "127.0.0.1";
+//        SERVER_PORT = 7788;
+//        
+//        CLIENT_HOST = "0.0.0.0";
+//        CLIENT_PORT = 8080;
         
-        CLIENT_HOST = "0.0.0.0";
-        CLIENT_PORT = 8080;
+        if (args == null || args.length != 3) {
+            System.out.println("args params is error.");
+        }
+        String APPID = args[0];
+        SERVER_HOST = args[1].split(":")[0];
+        SERVER_PORT = Integer.parseInt(args[1].split(":")[1]);
+      
+        CLIENT_HOST = args[2].split(":")[0];
+        CLIENT_PORT = Integer.parseInt(args[2].split(":")[1]);
         
         serverParam = new ProxyRequestServerParam(APPID, CLIENT_PORT);
         ContainerHelper.start(Arrays.asList(new Container[] { new ClientContainer() }));
