@@ -1,5 +1,8 @@
 package cn.blmdz.proxy.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.netty.channel.Channel;
 
 public class ProxyChannel {
@@ -22,7 +25,7 @@ public class ProxyChannel {
     /**
      * 面向用户端通道
      */
-    private Channel faceServerChannel;
+    private List<Channel> faceServerChannel;
 
     
     public static ProxyChannel buildFaceProxy(String appId, int faceProxyPort, Channel faceProxyChannel, int faceServerPort) {
@@ -50,17 +53,18 @@ public class ProxyChannel {
 	}
 
 
-	public Channel getFaceServerChannel() {
+	public List<Channel> getFaceServerChannel() {
 		return faceServerChannel;
 	}
 
 
 	public void setFaceServerChannel(Channel faceServerChannel) {
-		this.faceServerChannel = faceServerChannel;
+	    if (this.faceServerChannel == null) this.faceServerChannel = new ArrayList<>();
+	    this.faceServerChannel.add(faceServerChannel);
 	}
 
 
-	private ProxyChannel(String appId, Integer faceProxyPort, Channel faceProxyChannel, Integer faceServerPort, Channel faceServerChannel) {
+	private ProxyChannel(String appId, Integer faceProxyPort, Channel faceProxyChannel, Integer faceServerPort, List<Channel> faceServerChannel) {
 		this.appId = appId;
 		this.faceProxyPort = faceProxyPort;
 		this.faceProxyChannel = faceProxyChannel;

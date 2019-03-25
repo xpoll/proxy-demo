@@ -18,20 +18,23 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+        if (ClientContainer.channelServer != null)
+            return; // http 会先传输后链接
         super.channelActive(ctx);
     }
-    
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         if (ClientContainer.channelProxy == null) {
             ctx.channel().close();
-            return ;
+            return;
         }
         byte[] bytes = new byte[msg.readableBytes()];
         msg.readBytes(bytes);
-        
-        ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.TRANSFER, JSON.toJSONString(ClientContainer.serverParam), bytes));
+
+        ClientContainer.channelProxy.writeAndFlush(
+                Message.build(MessageType.TRANSFER, JSON.toJSONString(ClientContainer.serverParam), bytes));
     }
 
     /**
@@ -41,6 +44,7 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ClientContainer.channelServer = null;
+        ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.UNKNOWPORT));
         super.channelInactive(ctx);
     }
 

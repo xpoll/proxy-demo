@@ -13,37 +13,38 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * 面向代理(真实服务器上一层)
+ * 
  * @author xpoll
  * @date 2019年3月19日
  */
 public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message> {
-    
+
     private ServiceManager proxyManager;
-    
+
     public FaceProxyChannelHandler(ServiceManager proxyManager) {
         this.proxyManager = proxyManager;
     }
 
-	/**
-	 * 每当从服务端读到客户端写入信息时
-	 */
-	@Override
-	protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
+    /**
+     * 每当从服务端读到客户端写入信息时
+     */
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         System.out.println(JSON.toJSONString(msg));
-		switch (msg.getType()) {
-		case AUTH:
-		    authMessageHandler(ctx, msg);
-			break;
-		case CONNECT:
-		    connectMessageHandler(ctx, msg);
-			break;
-		case DISCONNECT:
-		    disconnectMessageHandler(ctx, msg);
-			break;
-		case HEARTBEAT:
-			heartbeatMessageHandler(ctx);
-			break;
+        switch (msg.getType()) {
+        case AUTH:
+            authMessageHandler(ctx, msg);
+            break;
+        case CONNECT:
+            connectMessageHandler(ctx, msg);
+            break;
+        case DISCONNECT:
+            disconnectMessageHandler(ctx, msg);
+            break;
+        case HEARTBEAT:
+            heartbeatMessageHandler(ctx);
+            break;
         case TRANSFER:
             transferMessageHandler(ctx, msg);
             break;
@@ -52,63 +53,66 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
             break;
         default:
             break;
-		}
-	}
-	
-	private void authMessageHandler(ChannelHandlerContext ctx, Message msg) {
-	    System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+        }
+    }
+
+    private void authMessageHandler(ChannelHandlerContext ctx, Message msg) {
+        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ProxyChannel proxy = proxyManager.findByAuthCodeFaceProxyPort(msg.getParams());
         if (proxy != null) {
             ctx.channel().writeAndFlush(Message.build(MessageType.ALREADY));
             ctx.channel().close();
         }
-	    proxy = proxyManager.addFaceProxyChannel(msg.getParams(), ctx.channel());
-	    if (proxy == null) {
-	        ctx.channel().close();
-	        return ;
-	    }
-	    proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.PORT, String.valueOf(proxy.getFaceServerPort())));
-	}
+        proxy = proxyManager.addFaceProxyChannel(msg.getParams(), ctx.channel());
+        if (proxy == null) {
+            ctx.channel().close();
+            return;
+        }
+        proxy.getFaceProxyChannel()
+                .writeAndFlush(Message.build(MessageType.PORT, String.valueOf(proxy.getFaceServerPort())));
+    }
 
     private void connectMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ProxyChannel proxy = proxyManager.findByAuthCodeFaceProxyPort(msg.getParams());
         if (proxy == null || proxy.getFaceProxyChannel() == null) {
             ctx.channel().close();
-            return ;
+            return;
         }
-        if (proxy.getFaceServerChannel() != null) {
-//        	proxy.getFaceServerChannel().config().setOption(ChannelOption.AUTO_READ, true); // TODO
-        }
+        // if (proxy.getFaceServerChannel() != null) {
+        // proxy.getFaceServerChannel().config().setOption(ChannelOption.AUTO_READ,
+        // true); // TODO
+        // }
     }
-    
+
     private void disconnectMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         proxyManager.removeFaceProxyChannel(proxyManager.findByAuthCodeFaceProxyPort(msg.getParams()));
     }
-	
-	private void heartbeatMessageHandler(ChannelHandlerContext ctx) {
+
+    private void heartbeatMessageHandler(ChannelHandlerContext ctx) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-		ctx.channel().writeAndFlush(Message.build(MessageType.HEARTBEAT));
-	}
+        ctx.channel().writeAndFlush(Message.build(MessageType.HEARTBEAT));
+    }
 
     private void transferMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
-        if (proxy.getFaceServerChannel() == null) return ;
-        
+        if (proxy.getFaceServerChannel() == null)
+            return;
+
         ByteBuf buf = ctx.alloc().buffer(msg.getData().length);
         buf.writeBytes(msg.getData());
-        proxy.getFaceServerChannel().writeAndFlush(buf);
+        proxy.getFaceServerChannel().forEach(item -> item.writeAndFlush(buf.copy()));
     }
-    
+
     private void unknowportMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         System.out.println(msg.getType().description());
         ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
-        if (proxy.getFaceServerChannel() == null) return ;
-        proxy.getFaceServerChannel().close();
-        
+        if (proxy.getFaceServerChannel() == null || proxy.getFaceServerChannel().isEmpty())
+            return;
+        proxy.getFaceServerChannel().forEach(item -> item.close());
     }
 
     /**
@@ -119,7 +123,9 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
         if (proxy != null && proxy.getFaceServerChannel() != null) {
-            proxy.getFaceServerChannel().config().setOption(ChannelOption.AUTO_READ, ctx.channel().isWritable());
+
+            proxy.getFaceServerChannel()
+                    .forEach(item -> item.config().setOption(ChannelOption.AUTO_READ, ctx.channel().isWritable()));
         }
         super.channelWritabilityChanged(ctx);
     }
@@ -133,7 +139,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
         proxyManager.removeFaceProxyChannel(proxyManager.findByChannel(ctx.channel()));
         super.channelInactive(ctx);
     }
-    
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);

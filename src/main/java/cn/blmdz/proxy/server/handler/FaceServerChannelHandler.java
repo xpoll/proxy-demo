@@ -13,13 +13,14 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * 面向服务器
+ * 
  * @author xpoll
  * @date 2019年3月19日
  */
 public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
-    
+
     private ServiceManager proxyManager;
-    
+
     public FaceServerChannelHandler(ServiceManager proxyManager) {
         this.proxyManager = proxyManager;
     }
@@ -33,32 +34,32 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
         Integer port = ((InetSocketAddress) ctx.channel().localAddress()).getPort();
         ProxyChannel proxy = proxyManager.findByFaceServerPort(port);
         if (proxy == null) {
-        	ctx.channel().close();
-        } else if (proxy.getFaceServerChannel() != null) {
-            ctx.channel().writeAndFlush(Message.build(MessageType.ALREADY));
             ctx.channel().close();
+            // } else if (proxy.getFaceServerChannel() != null) {
+            // ctx.channel().writeAndFlush(Message.build(MessageType.ALREADY));
+            // ctx.channel().close();
         } else {
             proxyManager.addFaceServerChannel(proxy, ctx.channel());
         }
         super.channelActive(ctx);
     }
-    
+
     /**
      * 每当从服务端读到客户端写入信息时
      */
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-    	ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
-    	if (proxy == null) {
-    		ctx.channel().close();
-    		return ;
-    	}
-    	
+        ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
+        if (proxy == null) {
+            ctx.channel().close();
+            return;
+        }
+
         byte[] bytes = new byte[msg.readableBytes()];
         msg.readBytes(bytes);
-    	
-    	proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.TRANSFER, bytes));
+
+        proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.TRANSFER, bytes));
     }
 
     /**
@@ -67,13 +68,13 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-    	ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
-    	if (proxy == null) {
-    		ctx.channel().close();
-    	} else {
-    		proxyManager.removeFaceServerChannel(proxy);
-    	}
-    	super.channelInactive(ctx);
+        ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
+        if (proxy == null) {
+            ctx.channel().close();
+        } else {
+            proxyManager.removeFaceServerChannel(proxy, ctx.channel());
+        }
+        super.channelInactive(ctx);
     }
 
     /**
@@ -82,13 +83,13 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-    	ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
-    	if (proxy == null) {
-    		ctx.channel().close();
-    		return ;
-    	}
-    	proxy.getFaceProxyChannel().config().setOption(ChannelOption.AUTO_READ, ctx.channel().isWritable());
-        
+        ProxyChannel proxy = proxyManager.findByChannel(ctx.channel());
+        if (proxy == null) {
+            ctx.channel().close();
+            return;
+        }
+        proxy.getFaceProxyChannel().config().setOption(ChannelOption.AUTO_READ, ctx.channel().isWritable());
+
     }
 
     /**

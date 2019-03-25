@@ -17,6 +17,6 @@ public interface ServiceManager {
 
     ProxyChannel addFaceServerChannel(ProxyChannel proxy, Channel channel);
 
-    void removeFaceServerChannel(ProxyChannel proxy);
+    void removeFaceServerChannel(ProxyChannel proxy, Channel channel);
     
 }

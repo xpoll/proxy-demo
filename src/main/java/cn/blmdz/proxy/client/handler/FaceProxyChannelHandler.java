@@ -48,19 +48,29 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 
     private void connectMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        ClientContainer.bootstrapServer.connect(ClientContainer.CLIENT_HOST, ClientContainer.CLIENT_PORT).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (future.isSuccess()) {
-                    ClientContainer.channelServer = future.channel();
-                    ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.CONNECT, JSON.toJSONString(ClientContainer.serverParam)));
-                    future.channel().config().setOption(ChannelOption.AUTO_READ, true);
-                } else {
-                    ClientContainer.channelServer = null;
-                    ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.UNKNOWPORT, JSON.toJSONString(ClientContainer.serverParam)));
-                }
-            }
-        });
+        ClientContainer.bootstrapServer.connect(ClientContainer.CLIENT_HOST, ClientContainer.CLIENT_PORT)
+                .addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture future) throws Exception {
+                        if (future.isSuccess()) {
+                            ClientContainer.channelServer = future.channel();
+                            ClientContainer.channelProxy.writeAndFlush(
+                                    Message.build(MessageType.CONNECT, JSON.toJSONString(ClientContainer.serverParam)));
+                            // future.channel().config().setOption(ChannelOption.AUTO_READ,
+                            // true);
+                        } else {
+                            ClientContainer.channelServer = null;
+                            ClientContainer.channelProxy.writeAndFlush(Message.build(MessageType.UNKNOWPORT,
+                                    JSON.toJSONString(ClientContainer.serverParam)));
+                        }
+                    }
+                });
+        try {
+            // connect 异步问题
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void disconnectMessageHandler(ChannelHandlerContext ctx, Message msg) {
@@ -73,6 +83,10 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
 
     private void transferMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+        if (ClientContainer.channelServer == null) {
+            // http 问题，http会先传数据后进入 FaceServerChannelHandler.channelActive
+            connectMessageHandler(ctx, msg);
+        }
         ByteBuf buf = ctx.alloc().buffer(msg.getData().length);
         buf.writeBytes(msg.getData());
         ClientContainer.channelServer.writeAndFlush(buf);
@@ -82,7 +96,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         System.out.println("外部端口为: " + msg.getParams());
     }
-    
+
     private void distoryconnectMessageHandler(ChannelHandlerContext ctx, Message msg) {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
         if (ClientContainer.channelServer != null) {

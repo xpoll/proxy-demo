@@ -27,10 +27,11 @@ import io.netty.util.AttributeKey;
 
 public class ServiceManagerImpl implements ServiceManager {
     
-    private static final AttributeKey<Integer> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
+    private static final AttributeKey<String> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
     
     // port
-    private static AtomicInteger portGenerate = new AtomicInteger(33333);
+    private static AtomicInteger portGenerate = new AtomicInteger(33336);
+    private static AtomicInteger id = new AtomicInteger(1);
 	
 	// 代理端端口与 ProxyChannel 的映射
 	private Map<String, ProxyChannel> FACE_PROXY_MAP = new HashMap<>();
@@ -106,7 +107,7 @@ public class ServiceManagerImpl implements ServiceManager {
             proxy = ProxyChannel.buildFaceProxy(parseObject.getAppId(), parseObject.getPort(), channel, faceServerPort);
             FACE_SERVER_MAP.put(faceServerPort, proxy);
             FACE_PROXY_MAP.put(getKey(parseObject), proxy);
-            channel.attr(CHANNEL_ID).set(faceServerPort);
+            channel.attr(CHANNEL_ID).set(String.valueOf(faceServerPort));
             return proxy;
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
@@ -128,15 +129,15 @@ public class ServiceManagerImpl implements ServiceManager {
             proxy.getFaceProxyChannel().writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
             proxy.getFaceProxyChannel().close();
             if (proxy.getFaceServerChannel() != null) {
-                proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
-                proxy.getFaceServerChannel().writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+//                proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
+                proxy.getFaceServerChannel().forEach(item -> item.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE));
             }
         }
     }
 
     @Override
     public ProxyChannel findByChannel(Channel channel) {
-        return FACE_SERVER_MAP.get(channel.attr(CHANNEL_ID).get());
+        return FACE_SERVER_MAP.get(Integer.parseInt(channel.attr(CHANNEL_ID).get() == null ? String.valueOf(0) : channel.attr(CHANNEL_ID).get().split("_")[0]));
     }
 
     
@@ -158,17 +159,22 @@ public class ServiceManagerImpl implements ServiceManager {
 	@Override
 	public ProxyChannel addFaceServerChannel(ProxyChannel proxy, Channel channel) {
 //		channel.config().setOption(ChannelOption.AUTO_READ, false); // TODO
-    	proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.CONNECT));
+	    if (proxy.getFaceServerChannel() == null || proxy.getFaceServerChannel().isEmpty())
+	        proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.CONNECT));
 		proxy.setFaceServerChannel(channel);
-		channel.attr(CHANNEL_ID).set(proxy.getFaceServerPort());
+		channel.attr(CHANNEL_ID).set(proxy.getFaceServerPort() + "_" + id.incrementAndGet());
 		return proxy;
 	}
 
 
 	@Override
-	public void removeFaceServerChannel(ProxyChannel proxy) {
-	    proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.DESTORYCONNECT));
-		proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
-		proxy.setFaceServerChannel(null);
+	public void removeFaceServerChannel(ProxyChannel proxy, Channel channel) {
+	    if (proxy.getFaceServerChannel().size() <= 1) {
+	        proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.DESTORYCONNECT));
+//		proxy.getFaceServerChannel().attr(CHANNEL_ID).remove();
+	        proxy.setFaceServerChannel(null);
+	    } else {
+	        proxy.getFaceServerChannel().remove(channel);
+	    }
 	}
 }
