@@ -59,9 +59,14 @@ public class ProxyChannel {
 
 
 	public void setFaceServerChannel(Channel faceServerChannel) {
-	    if (this.faceServerChannel == null) this.faceServerChannel = new ArrayList<>();
-	    this.faceServerChannel.add(faceServerChannel);
-	}
+        if (faceServerChannel == null) {
+            this.faceServerChannel = null;
+            return ;
+        }
+        
+        if (this.faceServerChannel == null) this.faceServerChannel = new ArrayList<>();
+        this.faceServerChannel.add(faceServerChannel);
+    }
 
 
 	private ProxyChannel(String appId, Integer faceProxyPort, Channel faceProxyChannel, Integer faceServerPort, List<Channel> faceServerChannel) {
