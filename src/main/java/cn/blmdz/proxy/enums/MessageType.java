@@ -8,7 +8,7 @@ public enum MessageType {
 	HEARTBEAT((byte) 0x01, "心跳检测"),
 	AUTH((byte) 0x02, "授权"),
 	CONNECT((byte) 0x03, "连接"),
-	DISCONNECT((byte) 0x04, "连接中断"),
+//	DISCONNECT((byte) 0x04, "连接中断"),
     TRANSFER((byte) 0x05, "传输数据"),
     PORT((byte) 0x06, "暴露的端口"),
     UNKNOWPORT((byte) 0x07, "代理端访问端口未开启"),

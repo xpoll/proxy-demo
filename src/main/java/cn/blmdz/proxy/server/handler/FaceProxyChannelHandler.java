@@ -39,9 +39,9 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
         case CONNECT:
             connectMessageHandler(ctx, msg);
             break;
-        case DISCONNECT:
-            disconnectMessageHandler(ctx, msg);
-            break;
+//        case DISCONNECT:
+//            disconnectMessageHandler(ctx, msg);
+//            break;
         case HEARTBEAT:
             heartbeatMessageHandler(ctx);
             break;

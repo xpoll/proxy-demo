@@ -1,12 +1,8 @@
 package cn.blmdz.proxy.server.impl;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.alibaba.fastjson.JSON;
 
@@ -16,6 +12,7 @@ import cn.blmdz.proxy.model.ProxyChannel;
 import cn.blmdz.proxy.model.ProxyRequestServerParam;
 import cn.blmdz.proxy.server.ServerContainer;
 import cn.blmdz.proxy.server.handler.FaceServerChannelHandler;
+import cn.blmdz.proxy.util.GenerateUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -29,10 +26,6 @@ public class ServiceManagerImpl implements ServiceManager {
     
     private static final AttributeKey<String> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
     
-    // port
-    private static AtomicInteger portGenerate = new AtomicInteger(33336);
-    private static AtomicInteger id = new AtomicInteger(1);
-	
 	// 代理端端口与 ProxyChannel 的映射
 	private Map<String, ProxyChannel> FACE_PROXY_MAP = new HashMap<>();
 	
@@ -46,42 +39,6 @@ public class ServiceManagerImpl implements ServiceManager {
         return param.getAppId() + "_" + param.getPort();
     }
     
-    private static synchronized Integer generatePort() {
-        int port = portGenerate.incrementAndGet();
-
-        String cmd = null;
-        if (System.getProperty("os.name").toLowerCase().contains("window")) {
-            // cmd = "netstat -an | findstr " + port;// 无效
-            cmd = "netstat -an";
-        } else {
-            cmd = "netstat -an --ip | grep " + port;
-        }
-        BufferedReader br = null;
-        try {
-            Process process = Runtime.getRuntime().exec(cmd);
-            br = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line = null;
-            StringBuilder sb = new StringBuilder();
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-            if (sb.toString().contains(":" + port)) {
-                return generatePort();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return generatePort();
-        } finally {
-            try {
-                if (br != null) br.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return port;
-
-    }
-	
 
     @Override
     public ProxyChannel findByAuthCodeFaceProxyPort(String param) {
@@ -100,7 +57,7 @@ public class ServiceManagerImpl implements ServiceManager {
         if (proxy != null) {
             return null;
         }
-        int faceServerPort = generatePort();// 分配一个端口
+        int faceServerPort = GenerateUtil.port();// 分配一个端口
         ServerBootstrap bootstrap = faceServerBootstrap();
         try {
             bootstrap.bind(faceServerPort).get();
@@ -162,7 +119,7 @@ public class ServiceManagerImpl implements ServiceManager {
 	    if (proxy.getFaceServerChannel() == null || proxy.getFaceServerChannel().isEmpty())
 	        proxy.getFaceProxyChannel().writeAndFlush(Message.build(MessageType.CONNECT));
 		proxy.setFaceServerChannel(channel);
-		channel.attr(CHANNEL_ID).set(proxy.getFaceServerPort() + "_" + id.incrementAndGet());
+		channel.attr(CHANNEL_ID).set(proxy.getFaceServerPort() + "_" + GenerateUtil.id());
 		return proxy;
 	}
 
