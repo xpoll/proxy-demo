@@ -11,8 +11,9 @@ public enum MessageType2 {
 	PORT(      (byte) 0x04, "传输端口(server)"),
 	TRANSFER(  (byte) 0x05, "数据传输(all)"),
 	NOSOURCE(  (byte) 0x06, "无接受源(all)"),
-//	DISCONNECT((byte) 0x07, "中断链接(all)"),
+	DISCONNECT((byte) 0x07, "中断链接(server)"),
 	ALREADY(   (byte) 0x08, "已经存在(server)"),
+    CONNECT(   (byte) 0x09, "建立链接(server)"),
 	;
     private byte value;
     

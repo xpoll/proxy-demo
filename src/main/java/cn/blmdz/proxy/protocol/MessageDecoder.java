@@ -1,7 +1,7 @@
 package cn.blmdz.proxy.protocol;
 
-import cn.blmdz.proxy.enums.MessageType;
-import cn.blmdz.proxy.model.Message;
+import cn.blmdz.proxy.enums.MessageType2;
+import cn.blmdz.proxy.model.Message2;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -23,7 +23,7 @@ public class MessageDecoder extends LengthFieldBasedFrameDecoder {
     }
 
     @Override
-    protected Message decode(ChannelHandlerContext ctx, ByteBuf in2) throws Exception {
+    protected Message2 decode(ChannelHandlerContext ctx, ByteBuf in2) throws Exception {
         ByteBuf in = (ByteBuf) super.decode(ctx, in2);
         if (in == null) return null;
 
@@ -42,6 +42,6 @@ public class MessageDecoder extends LengthFieldBasedFrameDecoder {
         in.readBytes(data);
         in.release();
         
-        return Message.build(MessageType.conversion(type), new String(paramsBytes), data);
+        return Message2.build(MessageType2.conversion(type), new String(paramsBytes), data);
     }
 }
