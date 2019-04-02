@@ -26,8 +26,9 @@ public class ClientConstant {
     public static String APPID = "babababa";
     public static String SERVER_HOST = "127.0.0.1";
     public static Integer SERVER_PORT = 7788;
-    public static String CLIENT_HOST = "0.0.0.0";
-    public static Integer CLIENT_PORT = 8080;
+//    public static String CLIENT_HOST = "0.0.0.0";
+    public static String CLIENT_HOST = "192.168.1.1";
+    public static Integer CLIENT_PORT = 80;
 
     public static ProxyRequestServerParam serverParam = new ProxyRequestServerParam(APPID, CLIENT_PORT);
 }

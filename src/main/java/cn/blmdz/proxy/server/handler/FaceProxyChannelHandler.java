@@ -6,8 +6,8 @@ import java.util.concurrent.ExecutionException;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.blmdz.proxy.enums.MessageType2;
-import cn.blmdz.proxy.model.Message2;
+import cn.blmdz.proxy.enums.MessageType;
+import cn.blmdz.proxy.model.Message;
 import cn.blmdz.proxy.model.ProxyRequestServerParam;
 import cn.blmdz.proxy.model.ProxyServerInvoke;
 import cn.blmdz.proxy.server.ServerConstant;
@@ -19,6 +19,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -29,25 +30,19 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
  * @author xpoll
  * @date 2019年3月19日
  */
-public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Message2> {
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        ctx.fireChannelActive();
-    }
+public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message> {
 
     /**
      * 每当从服务端读到客户端写入信息时
      */
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Message2 msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        System.out.println(JSON.toJSONString(msg));
+        System.out.println(JSON.toJSONString(Message.build(msg.getType(), msg.getParams())));
         switch(msg.getType()) {
         case HEARTBEAT: // 心跳检测(all)
         {
-            ctx.channel().writeAndFlush(Message2.build(MessageType2.HEARTBEAT));
+            ctx.channel().writeAndFlush(Message.build(MessageType.HEARTBEAT));
             break;
         }
         case AUTH: // 授权请求(client)
@@ -55,11 +50,11 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
             ProxyRequestServerParam obj = JSON.parseObject(msg.getParams(), ProxyRequestServerParam.class);
             String appIDPort = obj.getAppId() + "_" + obj.getPort();
             if (ServerConstant.PORT_APPID_PORT_MAP.containsValue(appIDPort)) {
-                ctx.channel().writeAndFlush(Message2.build(MessageType2.ALREADY));
+                ctx.channel().writeAndFlush(Message.build(MessageType.ALREADY));
                 // 这里没有关闭，让client关闭
                 return ;
             } else if (!ServerConstant.APPID_AUTH_SET.contains(obj.getAppId())) {
-                ctx.channel().writeAndFlush(Message2.build(MessageType2.AUTHERROR));
+                ctx.channel().writeAndFlush(Message.build(MessageType.AUTHERROR));
                 // 这里没有关闭，让client关闭
                 return ;
             }
@@ -74,7 +69,7 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
                     ServerConstant.PORT_PROXY_CHANNEL_MAP.put(faceServerPort, ctx.channel());
                     ServerConstant.PORT_APPID_PORT_MAP.put(faceServerPort, appIDPort);
                     // 传输Channel和暴露端口号
-                    ctx.channel().writeAndFlush(Message2.build(MessageType2.PORT, JSON.toJSONString(new ProxyServerInvoke(null, String.valueOf(faceServerPort)))));
+                    ctx.channel().writeAndFlush(Message.build(MessageType.PORT, JSON.toJSONString(new ProxyServerInvoke(null, String.valueOf(faceServerPort)))));
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                     ctx.channel().close();
@@ -83,47 +78,48 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
             }
             break;
         }
-        case TRANSFER: // 数据传输(all)
+        case CONNECT_SUCCESS:
         {
-            
-            Channel channel = ServerConstant.ID_SERVER_CHANNEL_MAP.get(JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId());
-            if (channel == null) {
-                ctx.channel().writeAndFlush(Message2.build(MessageType2.NOSOURCE));
-                // 这里没有关闭，让client关闭
-            } else {
-                ByteBuf buf = ctx.alloc().buffer(msg.getData().length);
-                buf.writeBytes(msg.getData());
-                channel.writeAndFlush(buf);
-                System.out.println(JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId() + " 接收真是服务器的数据并发给浏览器");
-            }
-            break;
+        	int id = getId(msg);
+            Channel channel = ServerConstant.ID_SERVER_CHANNEL_MAP.get(id);
+            channel.config().setOption(ChannelOption.AUTO_READ, true);
+        	break;
         }
-        case NOSOURCE: // 无接受源(all)
+        case CONNECT_ERROR:
         {
-            int id = JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId();
+        	int id = getId(msg);
+        	// 返回给前端建立失败 TODO
             Channel channel = ServerConstant.ID_SERVER_CHANNEL_MAP.get(id);
             if (channel != null) {
-                channel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-                // 让服务端关闭
-//                channel.close();
-//                ServerConstant.ID_SERVER_CHANNEL_MAP.remove(id);
+	            channel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
             }
+        	break;
+        }
+        case TRANSFER: // 数据传输(all)
+        {
+        	int id = getId(msg);
+            Channel channel = ServerConstant.ID_SERVER_CHANNEL_MAP.get(id);
+            ByteBuf buf = ctx.alloc().buffer(msg.getData().length);
+            buf.writeBytes(msg.getData());
+            channel.writeAndFlush(buf);
+            System.out.println(id + " 接收真是服务器的数据并发给浏览器");
             break;
         }
         case DISCONNECT: // 中断链接(all)
         {
-            int id = JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId();
+        	Integer id = getId(msg);
             Channel channel = ServerConstant.ID_SERVER_CHANNEL_MAP.get(id);
             if (channel != null) {
-//                channel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-                channel.close();
-                ServerConstant.ID_SERVER_CHANNEL_MAP.remove(id);
+	            channel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
             }
             break;
         }
         default:
             break;
         }
+    }
+    private int getId(Message msg) {
+    	return JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId();
     }
 
     private ServerBootstrap faceServerBootstrap() {
@@ -134,7 +130,7 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
                 // 计算流量以及调用次数
 //              ch.pipeline().addLast(handlers);
                 // 面向用户业务处理器
-                ch.pipeline().addLast(new FaceServerChannelHandler2());
+                ch.pipeline().addLast(new FaceServerChannelHandler());
             }
         });
         return bootstrapUser;
@@ -169,9 +165,9 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
         super.channelInactive(ctx);
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        super.exceptionCaught(ctx, cause);
-    }
+//    @Override
+//    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+//        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+//        super.exceptionCaught(ctx, cause);
+//    }
 }

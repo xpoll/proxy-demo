@@ -1,7 +1,7 @@
 package cn.blmdz.proxy.handler;
 
-import cn.blmdz.proxy.enums.MessageType2;
-import cn.blmdz.proxy.model.Message2;
+import cn.blmdz.proxy.enums.MessageType;
+import cn.blmdz.proxy.model.Message;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -22,7 +22,7 @@ public class IdleStateCheckHandler extends IdleStateHandler {
     protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) throws Exception {
 
         if (IdleStateEvent.FIRST_WRITER_IDLE_STATE_EVENT == evt) {
-            ctx.channel().writeAndFlush(Message2.build(MessageType2.HEARTBEAT));
+            ctx.channel().writeAndFlush(Message.build(MessageType.HEARTBEAT));
         } else if (IdleStateEvent.FIRST_READER_IDLE_STATE_EVENT == evt) {
             ctx.channel().close();
         }

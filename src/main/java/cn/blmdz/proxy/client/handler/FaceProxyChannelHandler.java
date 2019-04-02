@@ -1,44 +1,30 @@
 package cn.blmdz.proxy.client.handler;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.alibaba.fastjson.JSON;
 
 import cn.blmdz.proxy.client.ClientConstant;
-import cn.blmdz.proxy.enums.MessageType2;
-import cn.blmdz.proxy.model.Message2;
+import cn.blmdz.proxy.enums.MessageType;
+import cn.blmdz.proxy.model.Message;
 import cn.blmdz.proxy.model.ProxyServerInvoke;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Message2> {
-    
-    public static class Status {
-        private boolean result = false;
-        
-        public void setSuccess() {
-            this.result = true;
-        }
-        public boolean getSuccess() {
-            return this.result;
-        }
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-//        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        ctx.fireChannelActive();
-    }
+public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message> {
     
     /**
      * 每当从服务端读到客户端写入信息时
      */
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Message2 msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        System.out.println(JSON.toJSONString(msg));
+        System.out.println(JSON.toJSONString(Message.build(msg.getType(), msg.getParams())));
         switch (msg.getType()) {
         case HEARTBEAT: // 心跳检测(all)
         {
@@ -59,7 +45,7 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
         }
         case CONNECT:
         {
-            Status status = new Status();
+        	AtomicBoolean atomic = new AtomicBoolean(false);
             Integer id = JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId();
             System.out.println(id + " 建立连接 " + System.currentTimeMillis());
             ClientConstant.bootstrapServer.connect(ClientConstant.CLIENT_HOST, ClientConstant.CLIENT_PORT)
@@ -69,26 +55,16 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
                             if (future.isSuccess()) {
                                 future.channel().attr(ClientConstant.CHANNEL_ID).set(id);
                                 ClientConstant.ID_SERVER_CHANNEL_MAP.put(id, future.channel());
-                                System.out.println(id + " 建立连接完成 " + System.currentTimeMillis());
-                                // 要不要返回建立连接成功 ？
+                                ctx.channel().writeAndFlush(Message.build(MessageType.CONNECT_SUCCESS, JSON.toJSONString(new ProxyServerInvoke(id, null))));
+                                System.out.println(id + " 建立连接完成返回 " + System.currentTimeMillis());
                             } else {
-                                ctx.channel().writeAndFlush(Message2.build(MessageType2.NOSOURCE, JSON.toJSONString(new ProxyServerInvoke(id, null))));
-                                System.out.println(id + " 建立连接失败返回 " + MessageType2.NOSOURCE.description() + System.currentTimeMillis());
+                                ctx.channel().writeAndFlush(Message.build(MessageType.CONNECT_ERROR, JSON.toJSONString(new ProxyServerInvoke(id, null))));
+                                System.out.println(id + " 建立连接失败返回 " + MessageType.CONNECT_ERROR.description() + System.currentTimeMillis());
                             }
-                            status.setSuccess();
+                            atomic.set(true);
                         }
                     });
-            while(!status.getSuccess()) Thread.sleep(2);
-            System.out.println(id + " 建立连接完成并返回 " + System.currentTimeMillis());
-            break;
-        }
-        case DISCONNECT:
-        {
-            Integer id = JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId();
-            System.out.println("DISCONNECT请求真实服务器关闭链接但并没close" + System.currentTimeMillis());
-            ClientConstant.ID_SERVER_CHANNEL_MAP.get(id).writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-            // 未关闭 待测试
-            ClientConstant.ID_SERVER_CHANNEL_MAP.remove(id);
+            while(!atomic.get()) Thread.sleep(2);
             break;
         }
         case TRANSFER:
@@ -100,19 +76,16 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
             ClientConstant.ID_SERVER_CHANNEL_MAP.get(id).writeAndFlush(buf);
             break;
         }
-        case NOSOURCE:
-        {
-            System.out.println(msg.getType().description());
-            System.out.println("NOSOURCE请求真实服务器关闭链接但并没close" + System.currentTimeMillis());
-            synchronized (this) {
-                ClientConstant.ID_SERVER_CHANNEL_MAP.values().forEach(channel -> {
-                    channel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-                    // 未关闭 待测试
-                });
-                ClientConstant.ID_SERVER_CHANNEL_MAP.clear();
-            }
-            break;
-        }
+      case DISCONNECT:
+      {
+          Integer id = JSON.parseObject(msg.getParams(), ProxyServerInvoke.class).getChannelId();
+          Channel channel = ClientConstant.ID_SERVER_CHANNEL_MAP.get(id);
+          if (channel != null) {
+        	  System.out.println("DISCONNECT请求真实服务器关闭链接" + System.currentTimeMillis());
+        	  channel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+          }
+          break;
+      }
         case ALREADY:
         {
             System.out.println(msg.getType().description());
@@ -139,12 +112,12 @@ public class FaceProxyChannelHandler2 extends SimpleChannelInboundHandler<Messag
         
         super.channelInactive(ctx);
         System.out.println("链接失败 。。 关闭 。。");
-//        System.exit(-1);
+        System.exit(-1);
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        super.exceptionCaught(ctx, cause);
-    }
+//    @Override
+//    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+//        System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
+//        super.exceptionCaught(ctx, cause);
+//    }
 }
