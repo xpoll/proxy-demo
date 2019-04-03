@@ -17,29 +17,39 @@ public class ServerConstant {
     // 负责处理已建立的客户端通道上的数据读写
     public static NioEventLoopGroup workGroup;
 
+//    /**
+//     * 渠道ID对应的外部端口号
+//     * Map[ChannelID, Port]
+//     */
+//    public static Map<Long, Integer> ID_PORT_MAP = new HashMap<>();
     /**
-     * Map[ChannelID, Port]
-     */
-    public static Map<Integer, Integer> ID_PORT_MAP = new HashMap<>();
-    /**
+     * 渠道ID对应的用户端渠道
      * Map[ChannelID, ServerChannel]
      */
-    public static Map<Integer, Channel> ID_SERVER_CHANNEL_MAP = new HashMap<>();
+    public static Map<Long, Channel> ID_SERVER_CHANNEL_MAP = new HashMap<>();
+//    /**
+//     * 渠道ID对应的代理端渠道
+//     * Map[ChannelID, ProxyChannel]
+//     */
+//    public static Map<Long, Channel> ID_PROXY_CHANNEL_MAP = new HashMap<>();
     /**
+     * 外部端口号对应的APPID
      * Map[Port, APPID_Port]
      */
     public static Map<Integer, String> PORT_APPID_PORT_MAP = new HashMap<>();
-    /**
-     * Map[Port, ProxyChannel]
-     */
-    public static Map<Integer, Channel> PORT_PROXY_CHANNEL_MAP = new HashMap<>();
+//    /**
+//     * 外部端口号对应的base代理端口渠道
+//     * Map[Port, ProxyChannel]
+//     */
+//    public static Map<Integer, Channel> PORT_PROXY_CHANNEL_MAP = new HashMap<>();
     /**
      * Set[APPID]
      */
     public static Set<String> APPID_AUTH_SET = new HashSet<>();
 
-    public static final AttributeKey<Integer> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
+    public static final AttributeKey<Long> CHANNEL_ID = AttributeKey.newInstance("CHANNEL_ID");
     public static final AttributeKey<Integer> OUT_SERVER_PORT = AttributeKey.newInstance("OUT_SERVER_PORT");
+    public static final AttributeKey<Channel> CHANNEL = AttributeKey.newInstance("CHANNEL");
     
     static {
         APPID_AUTH_SET.add("babababa");

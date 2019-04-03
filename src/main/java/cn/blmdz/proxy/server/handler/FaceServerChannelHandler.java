@@ -6,7 +6,7 @@ import com.alibaba.fastjson.JSON;
 
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.model.Message;
-import cn.blmdz.proxy.model.ProxyServerInvoke;
+import cn.blmdz.proxy.model.ProxyParam;
 import cn.blmdz.proxy.server.ServerConstant;
 import cn.blmdz.proxy.util.GenerateUtil;
 import io.netty.buffer.ByteBuf;
@@ -22,6 +22,12 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * @date 2019年3月19日
  */
 public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
+    
+    private Channel BASE_PROXY_CHANNEL;
+    
+    public FaceServerChannelHandler(Channel base) {
+        this.BASE_PROXY_CHANNEL = base;
+    }
 
     /**
      * Channel 建立连接的时候触发
@@ -29,24 +35,16 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        Integer port = ((InetSocketAddress) ctx.channel().localAddress()).getPort();
-        int id = GenerateUtil.id();
+        long id = GenerateUtil.id();
         ctx.channel().attr(ServerConstant.CHANNEL_ID).set(id);
 
-
-        Channel channel = ServerConstant.PORT_PROXY_CHANNEL_MAP.get(port);
-        if (channel == null) {
-            // 客户端未连接
-            ctx.channel().writeAndFlush("客户端未连接");
-            return ;
-        }
-        channel.writeAndFlush(Message.build(MessageType.CONNECT, JSON.toJSONString(new ProxyServerInvoke(id, null))));
+        
         // 设置不可读 并暂时加入
         ctx.channel().config().setOption(ChannelOption.AUTO_READ, false);
-        ServerConstant.ID_PORT_MAP.put(id, port);
-        ServerConstant.ID_SERVER_CHANNEL_MAP.put(id, ctx.channel());
+//        ServerConstant.ID_PORT_MAP.put(id, port);
+        ServerConstant.ID_SERVER_CHANNEL_MAP.put(id, ctx.channel());// 暂时加进去
+        BASE_PROXY_CHANNEL.writeAndFlush(Message.build(MessageType.CONNECT_SERVER, ProxyParam.build(id).toString()));
         System.out.println(id + " 向客户端发送链接请求");
-        
         super.channelActive(ctx);
     }
 
@@ -64,7 +62,7 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
         msg.readBytes(bytes);
 
         System.out.println(id + " 向代理发送数据");
-        channel.writeAndFlush(Message.build(MessageType.TRANSFER, JSON.toJSONString(new ProxyServerInvoke(id, null)), bytes));
+        channel.writeAndFlush(Message.build(MessageType.TRANSFER, JSON.toJSONString(new ProxyParam(id, null)), bytes));
     }
 
     /**
@@ -81,8 +79,8 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
         ServerConstant.ID_SERVER_CHANNEL_MAP.remove(id);
         
         Channel channel = ServerConstant.PORT_PROXY_CHANNEL_MAP.get(port);
-        channel.writeAndFlush(Message.build(MessageType.DISCONNECT, JSON.toJSONString(new ProxyServerInvoke(id, null))));
-        System.out.println(id + "向客户端发送请求，" + MessageType.DISCONNECT);
+        channel.writeAndFlush(Message.build(MessageType.DISCONNECT_SERVER, JSON.toJSONString(new ProxyParam(id, null))));
+        System.out.println(id + "向客户端发送请求，" + MessageType.DISCONNECT_SERVER);
         super.channelInactive(ctx);
     }
 

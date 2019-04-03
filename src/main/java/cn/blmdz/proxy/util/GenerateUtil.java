@@ -4,13 +4,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class GenerateUtil {
 
     private static AtomicInteger GENERATE_PORT = new AtomicInteger(33336);
-    private static AtomicInteger GENERATE_ID = new AtomicInteger(0);
+    private static AtomicLong GENERATE_ID = new AtomicLong(0);
 
-    public static Integer id() {
+    public static long id() {
         return GENERATE_ID.incrementAndGet();
     }
     

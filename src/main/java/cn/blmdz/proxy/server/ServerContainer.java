@@ -54,7 +54,7 @@ public class ServerContainer implements Container {
     				while (true) {
     					System.out.println("---------------------------------------------------------------------");
     					System.out.println(JSON.toJSONString(ServerConstant.ID_SERVER_CHANNEL_MAP.keySet()));
-    					System.out.println(JSON.toJSONString(ServerConstant.PORT_PROXY_CHANNEL_MAP.keySet()));
+//    					System.out.println(JSON.toJSONString(ServerConstant.PORT_PROXY_CHANNEL_MAP.keySet()));
     					System.out.println("---------------------------------------------------------------------");
     					try {
     						Thread.sleep(5000L);

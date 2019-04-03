@@ -5,7 +5,6 @@ import java.util.Arrays;
 import com.alibaba.fastjson.JSON;
 
 import cn.blmdz.proxy.client.handler.FaceProxyChannelHandler;
-import cn.blmdz.proxy.client.handler.FaceServerChannelHandler;
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.handler.IdleStateCheckHandler;
 import cn.blmdz.proxy.helper.ContainerHelper;
@@ -27,16 +26,6 @@ public class ClientContainer implements Container {
     public void start() {
         ClientConstant.workGroup = new NioEventLoopGroup();
 
-        ClientConstant.bootstrapServer = new Bootstrap();
-        ClientConstant.bootstrapServer.group(ClientConstant.workGroup).channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        // 面向真实服务器业务处理器
-                        ch.pipeline().addLast(new FaceServerChannelHandler());
-                    }
-                });
-
         ClientConstant.bootstrapProxy = new Bootstrap();
         ClientConstant.bootstrapProxy.group(ClientConstant.workGroup).channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
@@ -56,9 +45,9 @@ public class ClientContainer implements Container {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
-                    ClientConstant.channelProxy = future.channel();
+                    ClientConstant.BASE_PROXY_CHANNEL = future.channel();
                     System.out.println("发送授权");
-                    future.channel().writeAndFlush(Message.build(MessageType.AUTH, JSON.toJSONString(ClientConstant.serverParam)));
+                    future.channel().writeAndFlush(Message.build(MessageType.AUTH, JSON.toJSONString(ClientConstant.requestParam)));
                 } else {
                     System.out.println("连接服务器失败");
                 }
