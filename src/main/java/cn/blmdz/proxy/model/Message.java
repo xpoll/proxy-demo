@@ -42,9 +42,9 @@ public class Message {
 		return new Message(type, params, null);
     }
     
-//	public static Message2 build(MessageType2 type, byte[] data) {
-//		return new Message2(type, null, data);
-//    }
+	public static Message build(MessageType type, byte[] data) {
+		return new Message(type, null, data);
+    }
 	
 	public static Message build(MessageType type, String params, byte[] data) {
 		return new Message(type, params, data);

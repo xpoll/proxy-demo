@@ -9,7 +9,7 @@ public enum MessageType {
 	AUTH(                       (byte) 0x02, "授权请求"),
 	AUTHERROR(                  (byte) 0x03, "授权失败"),
 	PORT(                       (byte) 0x04, "传输端口"),
-	TRANSFER(                   (byte) 0x05, "数据传输"),
+	TRANSFER_PROXY(                   (byte) 0x05, "数据传输-proxy"),
     DISCONNECT_PROXY(           (byte) 0x06, "中断链接"),
     DISCONNECT_SERVER(          (byte) 0x07, "中断链接"),
 	ALREADY(                    (byte) 0x08, "已经存在"),
@@ -17,8 +17,8 @@ public enum MessageType {
     CONNECT_SERVER(             (byte) 0x10, "建立链接-server"),
 //    CONNECT_PROXY_SUCCESS(      (byte) 0x11, "建立成功-proxy"),
 //    CONNECT_PROXY_ERROR(        (byte) 0x12, "建立失败-proxy"),
-    DISCONNECT_SERVER_SUCCESS(  (byte) 0x13, "建立成功-server"),
-    DISCONNECT_SERVER_ERROR(    (byte) 0x14, "建立失败-server"),
+    CONNECT_SERVER_SUCCESS(  (byte) 0x13, "建立成功-server"),
+    CONNECT_SERVER_ERROR(    (byte) 0x14, "建立失败-server"),
 	;
     private byte value;
     

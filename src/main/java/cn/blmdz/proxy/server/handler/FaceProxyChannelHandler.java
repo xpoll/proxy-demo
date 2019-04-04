@@ -118,11 +118,12 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
             channel.config().setOption(ChannelOption.AUTO_READ, true);
             break;
         }
-        case DISCONNECT_SERVER_SUCCESS:
+        case CONNECT_SERVER_SUCCESS:
         {
+            
             break;
         }
-        case DISCONNECT_SERVER_ERROR:
+        case CONNECT_SERVER_ERROR:
         {
             ServerConstant.ID_SERVER_CHANNEL_MAP.get(obj.getId()).writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
             ServerConstant.ID_SERVER_CHANNEL_MAP.remove(obj.getId());

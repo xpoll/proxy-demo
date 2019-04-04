@@ -54,15 +54,12 @@ public class FaceServerChannelHandler extends SimpleChannelInboundHandler<ByteBu
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         System.out.println(System.currentTimeMillis() + ": " + Thread.currentThread().getStackTrace()[1]);
-        int id = ctx.channel().attr(ServerConstant.CHANNEL_ID).get();
-        
-        Channel channel = ServerConstant.PORT_PROXY_CHANNEL_MAP.get(ServerConstant.ID_PORT_MAP.get(id));
-        
+        Channel channel = ctx.attr(ServerConstant.CHANNEL).get();
         byte[] bytes = new byte[msg.readableBytes()];
         msg.readBytes(bytes);
 
-        System.out.println(id + " 向代理发送数据");
-        channel.writeAndFlush(Message.build(MessageType.TRANSFER, JSON.toJSONString(new ProxyParam(id, null)), bytes));
+        System.out.println(ctx.attr(ServerConstant.CHANNEL_ID).get() + " 向代理发送数据");
+        channel.writeAndFlush(Message.build(MessageType.TRANSFER, bytes));
     }
 
     /**

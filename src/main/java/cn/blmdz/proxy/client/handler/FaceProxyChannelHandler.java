@@ -128,7 +128,7 @@ public class FaceProxyChannelHandler extends SimpleChannelInboundHandler<Message
                         }
                     });
             while(!(atomicServer.get() && atomicProxy.get())) Thread.sleep(1);
-            ctx.channel().writeAndFlush(Message.build(success ? MessageType.DISCONNECT_SERVER_SUCCESS : MessageType.DISCONNECT_SERVER_ERROR, msg.getParams()));
+            ctx.channel().writeAndFlush(Message.build(success ? MessageType.CONNECT_SERVER_SUCCESS : MessageType.CONNECT_SERVER_ERROR, msg.getParams()));
             break;
         }
         case CONNECT_PROXY_SUCCESS:
