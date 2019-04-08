@@ -33,7 +33,7 @@ public class Test {
 		System.out.println("开始建立连接 " + i);
     	AtomicBoolean atomic = new AtomicBoolean(false);
     	
-		bootstrapServer.connect(ClientConstant.CLIENT_HOST, ClientConstant.CLIENT_PORT)
+		bootstrapServer.connect(ClientConstant.SERVER_HOST, ClientConstant.SERVER_PORT)
 		.addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {

@@ -10,7 +10,7 @@ import cn.blmdz.proxy.helper.ContainerHelper;
 import cn.blmdz.proxy.interfaces.Container;
 import cn.blmdz.proxy.protocol.MessageDecoder;
 import cn.blmdz.proxy.protocol.MessageEncoder;
-import cn.blmdz.proxy.server.handler.FaceProxyChannelHandler;
+import cn.blmdz.proxy.server.handler.FaceProxyChannelHandler1;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -36,7 +36,7 @@ public class ServerContainer implements Container {
                         // 心跳检测处理器
                         ch.pipeline().addLast(new IdleStateCheckHandler());
                         // 面向代理业务处理器
-                        ch.pipeline().addLast(new FaceProxyChannelHandler());
+                        ch.pipeline().addLast(new FaceProxyChannelHandler1());
                     }
                 });
 

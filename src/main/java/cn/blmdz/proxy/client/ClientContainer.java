@@ -4,7 +4,8 @@ import java.util.Arrays;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.blmdz.proxy.client.handler.FaceProxyChannelHandler;
+import cn.blmdz.proxy.client.handler.FaceProxyChannelHandler1;
+import cn.blmdz.proxy.client.handler.FaceServerChannelHandler;
 import cn.blmdz.proxy.enums.MessageType;
 import cn.blmdz.proxy.handler.IdleStateCheckHandler;
 import cn.blmdz.proxy.helper.ContainerHelper;
@@ -26,6 +27,16 @@ public class ClientContainer implements Container {
     public void start() {
         ClientConstant.workGroup = new NioEventLoopGroup();
 
+        ClientConstant.bootstrapServer = new Bootstrap();
+        ClientConstant.bootstrapServer.group(ClientConstant.workGroup).channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        // 面向真实服务器业务处理器
+                        ch.pipeline().addLast(new FaceServerChannelHandler());
+                    }
+                });
+        
         ClientConstant.bootstrapProxy = new Bootstrap();
         ClientConstant.bootstrapProxy.group(ClientConstant.workGroup).channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
@@ -38,7 +49,7 @@ public class ClientContainer implements Container {
                         // 心跳检测处理器
                         ch.pipeline().addLast(new IdleStateCheckHandler());
                         // 面向服务器业务处理器
-                        ch.pipeline().addLast(new FaceProxyChannelHandler());
+                        ch.pipeline().addLast(new FaceProxyChannelHandler1());
                     }
                 });
         ClientConstant.bootstrapProxy.connect(ClientConstant.SERVER_HOST, ClientConstant.SERVER_PORT).addListener(new ChannelFutureListener() {
@@ -55,25 +66,6 @@ public class ClientContainer implements Container {
         });
 
         System.out.println("Proxy start success ...");
-        
-        new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				while (true) {
-					System.out.println("---------------------------------------------------------------------");
-					System.out.println(JSON.toJSONString(ClientConstant.ID_SERVER_CHANNEL_MAP.keySet()));
-					System.out.println("---------------------------------------------------------------------");
-					try {
-						Thread.sleep(5000L);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-				
-			}
-		}).start();
     }
 
     @Override
